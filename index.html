@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Price Reality Check</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
+        .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* The Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-box { background: #f1f5f9; padding: 16px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
+        .stat-val { font-size: 1.75rem; font-weight: 800; color: var(--primary); display: block; }
+        .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
+        #chart-container { height: 45vh; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="controls">
+            <h1 style="margin:0; font-size: 1.2rem;">Gas Price Reality Check</h1>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem; font-weight: bold;">Adjust for Inflation</span>
+                <label class="switch">
+                    <input type="checkbox" id="inflation-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-box"><span class="stat-label">Right Now</span><span id="p-now" class="stat-val">...</span></div>
+            <div class="stat-box"><span class="stat-label">1 Year Ago</span><span id="p-1y" class="stat-val">...</span></div>
+            <div class="stat-box"><span class="stat-label">5 Years Ago</span><span id="p-5y" class="stat-val">...</span></div>
+            <div class="stat-box"><span class="stat-label">10 Years Ago</span><span id="p-10y" class="stat-val">...</span></div>
+        </div>
+
+        <div id="chart-container"><canvas id="gasChart"></canvas></div>
+    </div>
+
+    <script>
+        const API_KEY = "8oHafsKfGDzUbv0dKHA2MPHESi4GmRpBkZ31lZIf";
+        let rawData = [];
+        let chartInstance = null;
+
+        // Cumulative Inflation Multipliers (Reference Year: 2026)
+        // Formulas based on CPI-U historical ratios
+        const getMultiplier = (year) => {
+            if (year >= 2025) return 1.0;
+            if (year >= 2022) return 1.15; // 2022 prices are ~15% cheaper than 2026 dollars
+            if (year >= 2016) return 1.35; 
+            if (year >= 2012) return 1.48; 
+            if (year >= 2008) return 1.55; // $1 in 2008 ≈ $1.55 in 2026
+            return 1.8; // Rough estimate for early 2000s
+        };
+
+        async function init() {
+            const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${API_KEY}&frequency=weekly&data[0]=value&facets[series][]=EMM_EPM0_PTE_NUS_DPG&sort[0][column]=period&sort[0][direction]=desc&length=800`;
+            const res = await fetch(url);
+            const json = await res.json();
+            rawData = json.response.data;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const isAdjusted = document.getElementById('inflation-toggle').checked;
+            
+            const processPrice = (item) => {
+                const year = parseInt(item.period.substring(0,4));
+                return isAdjusted ? item.value * getMultiplier(year) : item.value;
+            };
+
+            document.getElementById('p-now').innerText = `$${processPrice(rawData[0]).toFixed(2)}`;
+            document.getElementById('p-1y').innerText = `$${processPrice(rawData[52]).toFixed(2)}`;
+            document.getElementById('p-5y').innerText = `$${processPrice(rawData[260]).toFixed(2)}`;
+            document.getElementById('p-10y').innerText = `$${processPrice(rawData[520]).toFixed(2)}`;
+
+            renderChart(isAdjusted);
+        }
+
+        function renderChart(isAdjusted) {
+            const ctx = document.getElementById('gasChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+
+            const displayData = [...rawData].reverse().map(d => ({
+                x: d.period,
+                y: isAdjusted ? d.value * getMultiplier(parseInt(d.period.substring(0,4))) : d.value
+            }));
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: displayData.map(d => d.x),
+                    datasets: [{
+                        label: isAdjusted ? 'Price in 2026 Dollars' : 'Actual Price Paid',
+                        data: displayData.map(d => d.y),
+                        borderColor: '#2563eb',
+                        tension: 0.2,
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { ticks: { callback: v => '$' + v.toFixed(2) } } }
+                }
+            });
+        }
+
+        document.getElementById('inflation-toggle').addEventListener('change', updateDisplay);
+        init();
+    </script>
+</body>
+</html>

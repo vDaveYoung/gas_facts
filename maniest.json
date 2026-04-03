@@ -1,0 +1,17 @@
+{
+  "name": "Gas Price Reality Check",
+  "short_name": "GasFacts",
+  "description": "Historical fuel price comparison with inflation adjustment.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2311/2311545.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
