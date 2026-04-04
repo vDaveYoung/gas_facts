@@ -1030,6 +1030,8 @@ const state = {
     newsMatchMode: "exact",
     showDetailedDates: false,
     selectedNewsDate: null,
+    newsCache: {},
+    newsRequestToken: 0,
     presidentTermAverages: [],
     congressPeriodAverages: [],
     blendBoundaries: {
@@ -1499,7 +1501,57 @@ async function fetchDowSeries() {
     }
 }
 
-function updateNewsHeadlinesPanel(filtered) {
+async function fetchOnThisDayEvents(date) {
+    const key = `${date.getMonth() + 1}-${date.getDate()}`;
+    if (state.newsCache[key]) return state.newsCache[key];
+
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    try {
+        const response = await fetch(`https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/events/${month}/${day}`);
+        if (!response.ok) {
+            state.newsCache[key] = [];
+            return [];
+        }
+        const payload = await response.json();
+        const events = (payload?.events || []).map((event) => {
+            const page = event?.pages?.[0];
+            const link = page?.content_urls?.desktop?.page || page?.content_urls?.mobile?.page || "https://en.wikipedia.org/wiki/Main_Page";
+            return {
+                year: event.year,
+                title: page?.normalizedtitle || page?.title || "Historical event",
+                detail: event.text || "",
+                link,
+                t: new Date(`${date.getFullYear()}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
+            };
+        });
+        state.newsCache[key] = events;
+        return events;
+    } catch {
+        state.newsCache[key] = [];
+        return [];
+    }
+}
+
+async function fetchOnThisDayWindow(selectedDate, dayWindow) {
+    const dateList = [];
+    for (let offset = -dayWindow; offset <= dayWindow; offset += 1) {
+        const d = new Date(selectedDate);
+        d.setDate(d.getDate() + offset);
+        dateList.push(d);
+    }
+    const allDays = await Promise.all(dateList.map((date) => fetchOnThisDayEvents(date)));
+    return allDays.flat();
+}
+
+function renderNewsListItems(items, emptyText) {
+    if (!items.length) return `<li>${emptyText}</li>`;
+    return items.map((item) =>
+        `<li><strong>${item.year} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
+    ).join("");
+}
+
+async function updateNewsHeadlinesPanel(filtered) {
     const panel = document.getElementById("newsPanel");
     const worldList = document.getElementById("worldNewsList");
     const oilList = document.getElementById("oilNewsList");
@@ -1525,6 +1577,7 @@ function updateNewsHeadlinesPanel(filtered) {
     }
 
     const selectedDate = state.selectedNewsDate;
+    const requestToken = ++state.newsRequestToken;
     const nearestPoint = filtered.reduce((best, point) => {
         const diff = Math.abs(point.t.getTime() - selectedDate.getTime());
         if (!best || diff < best.diff) return { point, diff };
@@ -1535,39 +1588,29 @@ function updateNewsHeadlinesPanel(filtered) {
     const prior = selectedIndex > 0 ? filtered[Math.max(0, selectedIndex - 4)]?.y : filtered[0]?.y;
     const direction = Number.isFinite(prior) ? (current - prior > 0 ? "rising" : "falling") : "moving";
 
-    const sameDay = (a, b) => a.getFullYear() === b.getFullYear()
-        && a.getMonth() === b.getMonth()
-        && a.getDate() === b.getDate();
+    const dayWindow = state.newsMatchMode === "window10" ? 5 : 0;
+    const modeLabel = state.newsMatchMode === "window10" ? "10-day window (5 back / 5 forward)" : "Exact date";
 
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const withDiff = NEWS_EVENTS.map((event) => ({
-        ...event,
-        diffDays: Math.abs(event.t.getTime() - selectedDate.getTime()) / DAY_MS
-    }));
+    const wikiEvents = await fetchOnThisDayWindow(selectedDate, dayWindow);
+    if (requestToken !== state.newsRequestToken) return;
 
-    const matchedEvents = state.newsMatchMode === "window10"
-        ? withDiff.filter((event) => event.diffDays <= 5)
-        : withDiff.filter((event) => sameDay(event.t, selectedDate));
+    const selectedYear = selectedDate.getFullYear();
+    const withYearDistance = wikiEvents
+        .map((item) => ({ ...item, yearDistance: Math.abs((item.year || selectedYear) - selectedYear) }))
+        .sort((a, b) => a.yearDistance - b.yearDistance);
 
-    const sortedMatches = (matchedEvents.length ? matchedEvents : withDiff)
-        .sort((a, b) => a.diffDays - b.diffDays)
-        .slice(0, 8);
-    const worldHeadlines = sortedMatches.filter((item) => item.category === "world").slice(0, 4);
-    const oilHeadlines = sortedMatches.filter((item) => item.category === "oil").slice(0, 4);
+    const oilKeywords = /oil|gas|petroleum|opec|crude|energy|fuel|pipeline|embargo|refinery/i;
+    const oilHeadlines = withYearDistance
+        .filter((item) => oilKeywords.test(`${item.title} ${item.detail}`))
+        .slice(0, 4);
+    const worldHeadlines = withYearDistance
+        .filter((item) => !oilKeywords.test(`${item.title} ${item.detail}`))
+        .slice(0, 4);
 
-    const modeLabel = state.newsMatchMode === "window10"
-        ? "10-day window (5 back / 5 forward)"
-        : "Exact date";
-    const fallbackNote = matchedEvents.length ? "" : " No direct matches found; showing nearest context headlines.";
-    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Mode: ${modeLabel}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.${fallbackNote}`);
+    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Mode: ${modeLabel}. Trend near date is ${direction}, gas at ${formatCurrency(current)}. Source: Wikipedia On This Day.`);
 
-    worldList.innerHTML = worldHeadlines.length ? worldHeadlines.map((item) =>
-        `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("") : `<li>No world headlines found for ${modeLabel.toLowerCase()}.</li>`;
-
-    oilList.innerHTML = oilHeadlines.length ? oilHeadlines.map((item) =>
-        `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("") : `<li>No oil/gas headlines found for ${modeLabel.toLowerCase()}.</li>`;
+    worldList.innerHTML = renderNewsListItems(worldHeadlines, `No world headlines found for ${modeLabel.toLowerCase()}.`);
+    oilList.innerHTML = renderNewsListItems(oilHeadlines, `No oil/gas headlines found for ${modeLabel.toLowerCase()}.`);
 
     panel.hidden = false;
 }
