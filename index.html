@@ -818,6 +818,10 @@
                     </label>
                 </div>
                 <div class="toggle-group">
+                    <span>News match mode</span>
+                    <button class="range-pill" id="newsModeButton" type="button" aria-pressed="false">Exact Date</button>
+                </div>
+                <div class="toggle-group">
                     <span>Main graph detailed dates</span>
                     <label class="switch">
                         <input type="checkbox" id="dateAxisToggle">
@@ -1023,6 +1027,7 @@ const state = {
     showVehiclesOverlay: false,
     showDowOverlay: false,
     showNewsBubble: true,
+    newsMatchMode: "exact",
     showDetailedDates: false,
     selectedNewsDate: null,
     presidentTermAverages: [],
@@ -1530,24 +1535,36 @@ function updateNewsHeadlinesPanel(filtered) {
     const prior = selectedIndex > 0 ? filtered[Math.max(0, selectedIndex - 4)]?.y : filtered[0]?.y;
     const direction = Number.isFinite(prior) ? (current - prior > 0 ? "rising" : "falling") : "moving";
 
-    const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
-    const exactMatches = NEWS_EVENTS.filter((event) => {
-        const eventKey = `${event.t.getFullYear()}-${String(event.t.getMonth() + 1).padStart(2, "0")}-${String(event.t.getDate()).padStart(2, "0")}`;
-        return eventKey === dateKey;
-    });
+    const sameDay = (a, b) => a.getFullYear() === b.getFullYear()
+        && a.getMonth() === b.getMonth()
+        && a.getDate() === b.getDate();
 
-    const worldHeadlines = exactMatches.filter((item) => item.category === "world");
-    const oilHeadlines = exactMatches.filter((item) => item.category === "oil");
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const withDiff = NEWS_EVENTS.map((event) => ({
+        ...event,
+        diffDays: Math.abs(event.t.getTime() - selectedDate.getTime()) / DAY_MS
+    }));
 
-    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
+    const matchedEvents = state.newsMatchMode === "window10"
+        ? withDiff.filter((event) => event.diffDays <= 5)
+        : withDiff.filter((event) => sameDay(event.t, selectedDate));
+
+    const sortedMatches = matchedEvents.sort((a, b) => a.diffDays - b.diffDays);
+    const worldHeadlines = sortedMatches.filter((item) => item.category === "world").slice(0, 4);
+    const oilHeadlines = sortedMatches.filter((item) => item.category === "oil").slice(0, 4);
+
+    const modeLabel = state.newsMatchMode === "window10"
+        ? "10-day window (5 back / 5 forward)"
+        : "Exact date";
+    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Mode: ${modeLabel}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
 
     worldList.innerHTML = worldHeadlines.length ? worldHeadlines.map((item) =>
         `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("") : `<li>No world headlines tagged for this selected date.</li>`;
+    ).join("") : `<li>No world headlines found for ${modeLabel.toLowerCase()}.</li>`;
 
     oilList.innerHTML = oilHeadlines.length ? oilHeadlines.map((item) =>
         `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("") : `<li>No oil/gas headlines tagged for this selected date.</li>`;
+    ).join("") : `<li>No oil/gas headlines found for ${modeLabel.toLowerCase()}.</li>`;
 
     panel.hidden = false;
 }
@@ -1937,6 +1954,14 @@ function wireInteractions() {
     });
     document.getElementById("newsToggle").addEventListener("change", (event) => {
         state.showNewsBubble = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("newsModeButton").addEventListener("click", () => {
+        state.newsMatchMode = state.newsMatchMode === "exact" ? "window10" : "exact";
+        const modeButton = document.getElementById("newsModeButton");
+        const isWindowMode = state.newsMatchMode === "window10";
+        modeButton.textContent = isWindowMode ? "10-Day Window" : "Exact Date";
+        modeButton.setAttribute("aria-pressed", String(isWindowMode));
         updateChart();
     });
     document.getElementById("dateAxisToggle").addEventListener("change", (event) => {
