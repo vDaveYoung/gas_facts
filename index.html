@@ -449,6 +449,59 @@
             position: relative;
         }
 
+        .news-bubble {
+            position: absolute;
+            right: 14px;
+            top: 14px;
+            max-width: 360px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(4, 17, 14, 0.9);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+            z-index: 3;
+        }
+
+        .news-bubble h3 {
+            margin: 0 0 6px;
+            font-size: 0.95rem;
+        }
+
+        .news-bubble p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .context-charts {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            backdrop-filter: blur(20px);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .context-charts h3 {
+            margin: 0 0 6px;
+            font-size: 1.08rem;
+        }
+
+        .context-chart-box {
+            min-height: 280px;
+            height: 36vh;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
         .footer-note {
             padding: 14px 18px;
             color: var(--muted);
@@ -613,6 +666,27 @@
         </div>
         <div class="chart-box">
             <canvas id="mainChart"></canvas>
+            <div class="news-bubble" id="newsBubble" hidden>
+                <h3 id="newsBubbleTitle">Market context</h3>
+                <p id="newsBubbleBody">News context will appear here.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="context-charts">
+        <div>
+            <h3>Average Gas Price by Presidential Term</h3>
+            <p class="status-inline">Bars show average gas price over each full term.</p>
+        </div>
+        <div class="context-chart-box">
+            <canvas id="presidentBarChart"></canvas>
+        </div>
+        <div>
+            <h3>Average Gas Price by House/Senate Period</h3>
+            <p class="status-inline">Bars include seat-count labels for each period.</p>
+        </div>
+        <div class="context-chart-box">
+            <canvas id="congressBarChart"></canvas>
         </div>
     </section>
 
@@ -657,6 +731,20 @@
                     <span>Overlay U.S. registered vehicles</span>
                     <label class="switch">
                         <input type="checkbox" id="vehiclesToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Overlay DOW average</span>
+                    <label class="switch">
+                        <input type="checkbox" id="dowToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>News bubble for selected date</span>
+                    <label class="switch">
+                        <input type="checkbox" id="newsToggle" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -733,6 +821,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const PARTY_COLORS = {
     D: "rgba(75, 140, 255, 0.18)",
     R: "rgba(241, 101, 101, 0.18)",
+    T: "rgba(157, 93, 255, 0.22)",
     OTHER: "rgba(166, 184, 175, 0.2)"
 };
 
@@ -753,20 +842,20 @@ const PRESIDENTIAL_TERMS = [
 }));
 
 const CONGRESSIONAL_CONTROL = [
-    { start: "1977-01-03", end: "1981-01-03", house: "D", senate: "D" },
-    { start: "1981-01-03", end: "1987-01-03", house: "D", senate: "R" },
-    { start: "1987-01-03", end: "1995-01-03", house: "D", senate: "D" },
-    { start: "1995-01-03", end: "2001-01-03", house: "R", senate: "R" },
-    { start: "2001-01-03", end: "2001-06-06", house: "R", senate: "R" },
-    { start: "2001-06-06", end: "2003-01-03", house: "R", senate: "D" },
-    { start: "2003-01-03", end: "2007-01-03", house: "R", senate: "R" },
-    { start: "2007-01-03", end: "2011-01-03", house: "D", senate: "D" },
-    { start: "2011-01-03", end: "2015-01-03", house: "R", senate: "D" },
-    { start: "2015-01-03", end: "2019-01-03", house: "R", senate: "R" },
-    { start: "2019-01-03", end: "2021-01-03", house: "D", senate: "R" },
-    { start: "2021-01-03", end: "2023-01-03", house: "D", senate: "D" },
-    { start: "2023-01-03", end: "2025-01-03", house: "R", senate: "D" },
-    { start: "2025-01-03", end: "2027-01-03", house: "R", senate: "R" }
+    { start: "1977-01-03", end: "1981-01-03", house: "D", senate: "D", houseSeats: "292-143", senateSeats: "61-38" },
+    { start: "1981-01-03", end: "1987-01-03", house: "D", senate: "R", houseSeats: "242-192", senateSeats: "53-46" },
+    { start: "1987-01-03", end: "1995-01-03", house: "D", senate: "D", houseSeats: "258-177", senateSeats: "57-43" },
+    { start: "1995-01-03", end: "2001-01-03", house: "R", senate: "R", houseSeats: "230-205", senateSeats: "55-45" },
+    { start: "2001-01-03", end: "2001-06-06", house: "R", senate: "R", houseSeats: "221-212", senateSeats: "50-50" },
+    { start: "2001-06-06", end: "2003-01-03", house: "R", senate: "D", houseSeats: "221-212", senateSeats: "49-50" },
+    { start: "2003-01-03", end: "2007-01-03", house: "R", senate: "R", houseSeats: "229-205", senateSeats: "55-44" },
+    { start: "2007-01-03", end: "2011-01-03", house: "D", senate: "D", houseSeats: "233-202", senateSeats: "51-49" },
+    { start: "2011-01-03", end: "2015-01-03", house: "R", senate: "D", houseSeats: "242-193", senateSeats: "53-47" },
+    { start: "2015-01-03", end: "2019-01-03", house: "R", senate: "R", houseSeats: "247-188", senateSeats: "54-46" },
+    { start: "2019-01-03", end: "2021-01-03", house: "D", senate: "R", houseSeats: "235-199", senateSeats: "53-47" },
+    { start: "2021-01-03", end: "2023-01-03", house: "D", senate: "T", houseSeats: "222-213", senateSeats: "50-50" },
+    { start: "2023-01-03", end: "2025-01-03", house: "R", senate: "D", houseSeats: "222-213", senateSeats: "51-49" },
+    { start: "2025-01-03", end: "2027-01-03", house: "R", senate: "R", houseSeats: "220-215", senateSeats: "53-47" }
 ].map((period) => ({
     ...period,
     startDate: new Date(period.start),
@@ -794,9 +883,31 @@ const US_REGISTERED_VEHICLES = [
     source: "fhwa-annual-registered-vehicles"
 }));
 
+const NEWS_EVENTS = [
+    { date: "1979-01-16", title: "Iranian Revolution", detail: "Supply disruption fears increased crude volatility and gasoline pressure." },
+    { date: "1990-08-02", title: "Iraq Invades Kuwait", detail: "Geopolitical shock drove oil risk premium sharply higher." },
+    { date: "1991-01-17", title: "Operation Desert Storm", detail: "War-related uncertainty kept energy markets highly reactive." },
+    { date: "1998-12-01", title: "Asian Financial Aftershock", detail: "Weak global demand helped keep oil and gas prices subdued." },
+    { date: "2001-09-11", title: "9/11 Attacks", detail: "Demand expectations and risk repricing reshaped energy markets." },
+    { date: "2003-03-20", title: "Iraq War Begins", detail: "Conflict risk contributed to higher oil price volatility." },
+    { date: "2008-07-11", title: "2008 Oil Spike", detail: "Crude neared historical highs before the financial crisis collapse." },
+    { date: "2008-09-15", title: "Lehman Collapse", detail: "Demand concerns and recession shock pushed oil sharply lower." },
+    { date: "2014-11-27", title: "OPEC Output Strategy Shift", detail: "Supply-heavy strategy accelerated crude price declines." },
+    { date: "2020-03-11", title: "COVID Pandemic Shock", detail: "Demand collapse triggered severe oil and gasoline dislocations." },
+    { date: "2020-04-20", title: "WTI Futures Crash", detail: "Storage stress pushed front-month oil futures briefly negative." },
+    { date: "2022-02-24", title: "Russia Invades Ukraine", detail: "Supply risk and sanctions concerns lifted global oil prices." },
+    { date: "2023-10-07", title: "Middle East Conflict Escalation", detail: "Risk premium rose on fears of broader regional supply disruption." }
+].map((event) => ({
+    ...event,
+    t: new Date(event.date)
+}));
+
 const state = {
     allData: [],
+    dowSeries: [],
     chart: null,
+    presidentBarChart: null,
+    congressBarChart: null,
     slider: null,
     selectedStart: null,
     selectedEnd: null,
@@ -805,6 +916,10 @@ const state = {
     showPresidentialOverlay: false,
     showCongressOverlay: false,
     showVehiclesOverlay: false,
+    showDowOverlay: false,
+    showNewsBubble: true,
+    presidentTermAverages: [],
+    congressPeriodAverages: [],
     blendBoundaries: {
         monthlyToWeekly: null,
         regularToTotal: null
@@ -887,6 +1002,11 @@ const governanceOverlayPlugin = {
                     ctx.textAlign = "center";
                     ctx.textBaseline = "top";
                     ctx.fillText(term.name, left + (width / 2), chartArea.top + 6);
+                    const avg = state.presidentTermAverages.find((item) => item.name === term.name && item.start === term.start)?.avg;
+                    if (Number.isFinite(avg)) {
+                        ctx.font = "500 10px 'IBM Plex Mono', monospace";
+                        ctx.fillText(`Avg ${formatCurrency(avg)}`, left + (width / 2), chartArea.top + 20);
+                    }
                 }
             });
         }
@@ -918,7 +1038,7 @@ const governanceOverlayPlugin = {
                     ctx.font = "500 10px 'IBM Plex Mono', monospace";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    ctx.fillText(`H:${period.house} S:${period.senate}`, left + (width / 2), top + (laneHeight / 2));
+                    ctx.fillText(`H:${period.houseSeats} | S:${period.senateSeats}`, left + (width / 2), top + (laneHeight / 2));
                 }
             });
         }
@@ -1095,6 +1215,190 @@ function updateSummary(filtered) {
     setText("date-range-text", `${formatDate(first.t)} to ${formatDate(last.t)} · roughly ${windowYears} year${windowYears === 1 ? "" : "s"}`);
 }
 
+function averageForRange(startDate, endDate) {
+    const inRange = state.allData.filter((point) => point.t >= startDate && point.t < endDate);
+    if (!inRange.length) return NaN;
+    return average(inRange.map((point) => point.y));
+}
+
+function buildContextAverages() {
+    state.presidentTermAverages = PRESIDENTIAL_TERMS.map((term) => ({
+        name: term.name,
+        start: term.start,
+        label: `${term.name} (${term.start.slice(0, 4)}-${term.end.slice(0, 4)})`,
+        avg: averageForRange(term.startDate, term.endDate),
+        party: term.party
+    })).filter((item) => Number.isFinite(item.avg));
+
+    state.congressPeriodAverages = CONGRESSIONAL_CONTROL.map((period) => ({
+        label: `${period.start.slice(0, 4)}-${period.end.slice(0, 4)}`,
+        avg: averageForRange(period.startDate, period.endDate),
+        house: period.house,
+        senate: period.senate,
+        houseSeats: period.houseSeats,
+        senateSeats: period.senateSeats
+    })).filter((item) => Number.isFinite(item.avg));
+}
+
+function updateContextCharts() {
+    const presidentCtx = document.getElementById("presidentBarChart")?.getContext("2d");
+    const congressCtx = document.getElementById("congressBarChart")?.getContext("2d");
+    if (!presidentCtx || !congressCtx) return;
+
+    const presidentLabels = state.presidentTermAverages.map((item) => item.label);
+    const presidentValues = state.presidentTermAverages.map((item) => item.avg);
+    const presidentColors = state.presidentTermAverages.map((item) => PARTY_COLORS[item.party] || PARTY_COLORS.OTHER);
+
+    if (state.presidentBarChart) {
+        state.presidentBarChart.data.labels = presidentLabels;
+        state.presidentBarChart.data.datasets[0].data = presidentValues;
+        state.presidentBarChart.data.datasets[0].backgroundColor = presidentColors;
+        state.presidentBarChart.update("none");
+    } else {
+        state.presidentBarChart = new Chart(presidentCtx, {
+            type: "bar",
+            data: {
+                labels: presidentLabels,
+                datasets: [{
+                    label: "Avg gas price",
+                    data: presidentValues,
+                    backgroundColor: presidentColors,
+                    borderColor: "rgba(255,255,255,0.18)",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Avg: ${formatCurrency(context.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: "#9ab8af", maxRotation: 60, minRotation: 30 } },
+                    y: {
+                        ticks: { color: "#9ab8af", callback: (value) => formatCurrency(Number(value)) },
+                        grid: { color: "rgba(255,255,255,0.08)" }
+                    }
+                }
+            }
+        });
+    }
+
+    const congressLabels = state.congressPeriodAverages.map((item) => `${item.label}\nH:${item.houseSeats} S:${item.senateSeats}`);
+    const congressValues = state.congressPeriodAverages.map((item) => item.avg);
+    const congressColors = state.congressPeriodAverages.map((item) => {
+        if (item.house === "T" || item.senate === "T") return PARTY_COLORS.T;
+        if (item.house === item.senate) return PARTY_COLORS[item.house] || PARTY_COLORS.OTHER;
+        return "rgba(180, 172, 255, 0.24)";
+    });
+
+    if (state.congressBarChart) {
+        state.congressBarChart.data.labels = congressLabels;
+        state.congressBarChart.data.datasets[0].data = congressValues;
+        state.congressBarChart.data.datasets[0].backgroundColor = congressColors;
+        state.congressBarChart.update("none");
+    } else {
+        state.congressBarChart = new Chart(congressCtx, {
+            type: "bar",
+            data: {
+                labels: congressLabels,
+                datasets: [{
+                    label: "Avg gas price",
+                    data: congressValues,
+                    backgroundColor: congressColors,
+                    borderColor: "rgba(255,255,255,0.18)",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => items[0].label.replace("\n", " "),
+                            label: (context) => `Avg: ${formatCurrency(context.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: "#9ab8af", maxRotation: 75, minRotation: 50 } },
+                    y: {
+                        ticks: { color: "#9ab8af", callback: (value) => formatCurrency(Number(value)) },
+                        grid: { color: "rgba(255,255,255,0.08)" }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function parseDowCsv(csvText) {
+    const lines = csvText.trim().split("\n").slice(1);
+    const yearly = new Map();
+    lines.forEach((line) => {
+        const [dateStr, valueStr] = line.split(",");
+        const value = Number.parseFloat(valueStr);
+        const date = new Date(dateStr);
+        if (!Number.isFinite(value) || Number.isNaN(date.getTime())) return;
+        const year = date.getFullYear();
+        const bucket = yearly.get(year) || { sum: 0, count: 0 };
+        bucket.sum += value;
+        bucket.count += 1;
+        yearly.set(year, bucket);
+    });
+    return Array.from(yearly.entries())
+        .map(([year, bucket]) => ({
+            t: new Date(`${year}-07-01`),
+            y: bucket.sum / bucket.count,
+            source: "fred-djia-annual-average"
+        }))
+        .sort((a, b) => a.t - b.t);
+}
+
+async function fetchDowSeries() {
+    try {
+        const response = await fetch("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DJIA");
+        if (!response.ok) return [];
+        const text = await response.text();
+        return parseDowCsv(text);
+    } catch {
+        return [];
+    }
+}
+
+function updateNewsBubble(filtered) {
+    const bubble = document.getElementById("newsBubble");
+    if (!bubble) return;
+    if (!state.showNewsBubble || !filtered.length) {
+        bubble.hidden = true;
+        return;
+    }
+
+    const selectedDate = filtered[filtered.length - 1].t;
+    const current = filtered[filtered.length - 1].y;
+    const prior = filtered[Math.max(0, filtered.length - 5)]?.y;
+    const direction = Number.isFinite(prior) ? (current - prior > 0 ? "rising" : "falling") : "moving";
+
+    const nearest = NEWS_EVENTS
+        .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
+        .sort((a, b) => a.diff - b.diff)[0];
+
+    setText("newsBubbleTitle", nearest
+        ? `${formatDate(selectedDate)} · ${nearest.title}`
+        : `${formatDate(selectedDate)} · Market Context`);
+    setText("newsBubbleBody", nearest
+        ? `${nearest.detail} Current trend is ${direction}, with gas at ${formatCurrency(current)}.`
+        : `No tagged major event for this date. Current trend is ${direction}, with gas at ${formatCurrency(current)}.`);
+    bubble.hidden = false;
+}
+
 function updateChart() {
     const filtered = getFilteredData();
     if (!filtered.length) return;
@@ -1147,6 +1451,26 @@ function updateChart() {
         }
     }
 
+    if (state.showDowOverlay) {
+        const dowPoints = state.dowSeries
+            .filter((point) => point.t >= filtered[0].t && point.t <= filtered[filtered.length - 1].t)
+            .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+
+        if (dowPoints.length) {
+            datasets.push({
+                label: "DOW annual average",
+                data: dowPoints,
+                borderColor: "#ffd166",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.16,
+                fill: false,
+                yAxisID: "y2"
+            });
+        }
+    }
+
     const minDate = filtered[0].t;
     const maxDate = filtered[filtered.length - 1].t;
 
@@ -1195,6 +1519,14 @@ function updateChart() {
                             color: "#9ab8af",
                             callback: (value) => `${(Number(value) / 1000000).toFixed(0)}M`
                         }
+                    },
+                    y2: {
+                        position: "right",
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: "#ffd166",
+                            callback: (value) => Number(value).toLocaleString()
+                        }
                     }
                 },
                 plugins: {
@@ -1216,12 +1548,18 @@ function updateChart() {
                                 if (context.dataset.label === "U.S. registered vehicles") {
                                     return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString()}`;
                                 }
+                                if (context.dataset.label === "DOW annual average") {
+                                    return `${context.dataset.label}: ${Math.round(context.parsed.y).toLocaleString()}`;
+                                }
                                 return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
                             },
                             footer: (items) => {
                                 if (items?.[0]?.dataset?.label === "U.S. registered vehicles") {
                                     const value = items?.[0]?.parsed?.y;
                                     return `FHWA annual count: ${Number(value).toLocaleString()} vehicles`;
+                                }
+                                if (items?.[0]?.dataset?.label === "DOW annual average") {
+                                    return "FRED DJIA annual average";
                                 }
                                 const source = items?.[0]?.raw?.source;
                                 if (source === "monthly-total-pta") return "Source granularity: monthly";
@@ -1246,7 +1584,11 @@ function updateChart() {
     } else {
         narrativeParts.push("Turn on vehicle overlay to compare gas prices with registered vehicle growth.");
     }
+    if (state.showDowOverlay) {
+        narrativeParts.push("DOW annual-average overlay is active for market context.");
+    }
     setText("chartNarrative", narrativeParts.join(" "));
+    updateNewsBubble(filtered);
 }
 
 function initSlider() {
@@ -1343,10 +1685,11 @@ async function fetchData() {
     const legacyMonthlyUrl = `https://api.eia.gov/v2/petroleum/pri/allmg/data/?api_key=${API_KEY}&frequency=monthly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPM0&facets[process][]=PTA&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
 
     try {
-        const [totalResponse, regularResponse, legacyResponse] = await Promise.all([
+        const [totalResponse, regularResponse, legacyResponse, dowSeries] = await Promise.all([
             fetch(totalGasWeeklyUrl),
             fetch(regularGasWeeklyUrl),
-            fetch(legacyMonthlyUrl)
+            fetch(legacyMonthlyUrl),
+            fetchDowSeries()
         ]);
 
         const totalPayload = await totalResponse.json();
@@ -1367,12 +1710,15 @@ async function fetchData() {
         const regularWeekly = normalizeSeriesRows(regularRows, "weekly-regular");
         const legacyMonthly = normalizeSeriesRows(legacyRows, "monthly-total-pta");
         state.allData = buildBlendedSeries(totalWeekly, regularWeekly, legacyMonthly);
+        state.dowSeries = Array.isArray(dowSeries) ? dowSeries : [];
 
         if (!state.allData.length) {
             throw new Error("The dataset contained no valid price points");
         }
 
         setText("seriesMeta", "Source: EIA blended history (Monthly 1983+, Weekly 1990+, Total weekly 1993+)");
+        buildContextAverages();
+        updateContextCharts();
 
         initSlider();
         applyFullRange();
@@ -1414,6 +1760,14 @@ function wireInteractions() {
         state.showVehiclesOverlay = event.target.checked;
         updateChart();
     });
+    document.getElementById("dowToggle").addEventListener("change", (event) => {
+        state.showDowOverlay = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("newsToggle").addEventListener("change", (event) => {
+        state.showNewsBubble = event.target.checked;
+        updateChart();
+    });
 
     document.getElementById("rangePills").addEventListener("click", (event) => {
         const button = event.target.closest(".range-pill");
@@ -1449,6 +1803,8 @@ function wireInteractions() {
             setText("statusMeta", "Status: data loaded, service worker registration skipped");
         });
     }
+
+    state.showNewsBubble = document.getElementById("newsToggle").checked;
 }
 
 wireInteractions();
