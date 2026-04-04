@@ -449,29 +449,40 @@
             position: relative;
         }
 
-        .news-bubble {
-            position: absolute;
-            right: 14px;
-            top: 14px;
-            max-width: 360px;
-            padding: 12px 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(4, 17, 14, 0.9);
-            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
-            z-index: 3;
+        .news-panel {
+            margin-top: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
         }
 
-        .news-bubble h3 {
-            margin: 0 0 6px;
-            font-size: 0.95rem;
-        }
-
-        .news-bubble p {
+        .news-panel h3 {
             margin: 0;
+            font-size: 1rem;
+        }
+
+        .news-meta {
+            margin: 6px 0 0;
             color: var(--muted);
-            font-size: 0.86rem;
-            line-height: 1.45;
+            font-size: 0.84rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .news-list {
+            margin: 12px 0 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .news-list li {
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .news-list a {
+            color: var(--teal);
         }
 
         .context-charts {
@@ -675,10 +686,11 @@
         </div>
         <div class="chart-box">
             <canvas id="mainChart"></canvas>
-            <div class="news-bubble" id="newsBubble" hidden>
-                <h3 id="newsBubbleTitle">Market context</h3>
-                <p id="newsBubbleBody">News context will appear here.</p>
-            </div>
+        </div>
+        <div class="news-panel" id="newsPanel" hidden>
+            <h3>Top News Headlines Near Selected Date</h3>
+            <p class="news-meta" id="newsPanelMeta">Select a point on the timeline to focus headlines.</p>
+            <ol class="news-list" id="newsHeadlinesList"></ol>
         </div>
     </section>
 
@@ -764,7 +776,7 @@
                     </label>
                 </div>
                 <div class="toggle-group">
-                    <span>News bubble for selected date</span>
+                    <span>News headlines for selected date</span>
                     <label class="switch">
                         <input type="checkbox" id="newsToggle" checked>
                         <span class="slider"></span>
@@ -919,19 +931,19 @@ const US_REGISTERED_VEHICLES = [
 }));
 
 const NEWS_EVENTS = [
-    { date: "1979-01-16", title: "Iranian Revolution", detail: "Supply disruption fears increased crude volatility and gasoline pressure." },
-    { date: "1990-08-02", title: "Iraq Invades Kuwait", detail: "Geopolitical shock drove oil risk premium sharply higher." },
-    { date: "1991-01-17", title: "Operation Desert Storm", detail: "War-related uncertainty kept energy markets highly reactive." },
-    { date: "1998-12-01", title: "Asian Financial Aftershock", detail: "Weak global demand helped keep oil and gas prices subdued." },
-    { date: "2001-09-11", title: "9/11 Attacks", detail: "Demand expectations and risk repricing reshaped energy markets." },
-    { date: "2003-03-20", title: "Iraq War Begins", detail: "Conflict risk contributed to higher oil price volatility." },
-    { date: "2008-07-11", title: "2008 Oil Spike", detail: "Crude neared historical highs before the financial crisis collapse." },
-    { date: "2008-09-15", title: "Lehman Collapse", detail: "Demand concerns and recession shock pushed oil sharply lower." },
-    { date: "2014-11-27", title: "OPEC Output Strategy Shift", detail: "Supply-heavy strategy accelerated crude price declines." },
-    { date: "2020-03-11", title: "COVID Pandemic Shock", detail: "Demand collapse triggered severe oil and gasoline dislocations." },
-    { date: "2020-04-20", title: "WTI Futures Crash", detail: "Storage stress pushed front-month oil futures briefly negative." },
-    { date: "2022-02-24", title: "Russia Invades Ukraine", detail: "Supply risk and sanctions concerns lifted global oil prices." },
-    { date: "2023-10-07", title: "Middle East Conflict Escalation", detail: "Risk premium rose on fears of broader regional supply disruption." }
+    { date: "1979-01-16", title: "Iranian Revolution", detail: "Supply disruption fears increased crude volatility and gasoline pressure.", link: "https://en.wikipedia.org/wiki/Iranian_Revolution" },
+    { date: "1990-08-02", title: "Iraq Invades Kuwait", detail: "Geopolitical shock drove oil risk premium sharply higher.", link: "https://en.wikipedia.org/wiki/Invasion_of_Kuwait" },
+    { date: "1991-01-17", title: "Operation Desert Storm", detail: "War-related uncertainty kept energy markets highly reactive.", link: "https://en.wikipedia.org/wiki/Gulf_War" },
+    { date: "1998-12-01", title: "Asian Financial Aftershock", detail: "Weak global demand helped keep oil and gas prices subdued.", link: "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis" },
+    { date: "2001-09-11", title: "9/11 Attacks", detail: "Demand expectations and risk repricing reshaped energy markets.", link: "https://en.wikipedia.org/wiki/September_11_attacks" },
+    { date: "2003-03-20", title: "Iraq War Begins", detail: "Conflict risk contributed to higher oil price volatility.", link: "https://en.wikipedia.org/wiki/Iraq_War" },
+    { date: "2008-07-11", title: "2008 Oil Spike", detail: "Crude neared historical highs before the financial crisis collapse.", link: "https://en.wikipedia.org/wiki/2000s_energy_crisis" },
+    { date: "2008-09-15", title: "Lehman Collapse", detail: "Demand concerns and recession shock pushed oil sharply lower.", link: "https://en.wikipedia.org/wiki/Lehman_Brothers" },
+    { date: "2014-11-27", title: "OPEC Output Strategy Shift", detail: "Supply-heavy strategy accelerated crude price declines.", link: "https://en.wikipedia.org/wiki/2010s_oil_glut" },
+    { date: "2020-03-11", title: "COVID Pandemic Shock", detail: "Demand collapse triggered severe oil and gasoline dislocations.", link: "https://en.wikipedia.org/wiki/COVID-19_pandemic" },
+    { date: "2020-04-20", title: "WTI Futures Crash", detail: "Storage stress pushed front-month oil futures briefly negative.", link: "https://en.wikipedia.org/wiki/2020_Russia%E2%80%93Saudi_Arabia_oil_price_war" },
+    { date: "2022-02-24", title: "Russia Invades Ukraine", detail: "Supply risk and sanctions concerns lifted global oil prices.", link: "https://en.wikipedia.org/wiki/Russian_invasion_of_Ukraine" },
+    { date: "2023-10-07", title: "Middle East Conflict Escalation", detail: "Risk premium rose on fears of broader regional supply disruption.", link: "https://en.wikipedia.org/wiki/Israel%E2%80%93Hamas_war" }
 ].map((event) => ({
     ...event,
     t: new Date(event.date)
@@ -1423,11 +1435,12 @@ async function fetchDowSeries() {
     }
 }
 
-function updateNewsBubble(filtered) {
-    const bubble = document.getElementById("newsBubble");
-    if (!bubble) return;
+function updateNewsHeadlinesPanel(filtered) {
+    const panel = document.getElementById("newsPanel");
+    const list = document.getElementById("newsHeadlinesList");
+    if (!panel || !list) return;
     if (!state.showNewsBubble || !filtered.length) {
-        bubble.hidden = true;
+        panel.hidden = true;
         return;
     }
 
@@ -1453,13 +1466,20 @@ function updateNewsBubble(filtered) {
         .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
         .sort((a, b) => a.diff - b.diff)[0];
 
-    setText("newsBubbleTitle", nearest
-        ? `${formatDate(selectedDate)} · ${nearest.title}`
-        : `${formatDate(selectedDate)} · Market Context`);
-    setText("newsBubbleBody", nearest
-        ? `${nearest.detail} Current trend near this date is ${direction}, with gas at ${formatCurrency(current)}.`
-        : `No tagged major event for this date. Current trend near this date is ${direction}, with gas at ${formatCurrency(current)}.`);
-    bubble.hidden = false;
+    const topHeadlines = NEWS_EVENTS
+        .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
+        .sort((a, b) => a.diff - b.diff)
+        .slice(0, 5);
+
+    setText("newsPanelMeta", nearest
+        ? `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`
+        : `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
+
+    list.innerHTML = topHeadlines.map((item) =>
+        `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
+    ).join("");
+
+    panel.hidden = false;
 }
 
 function updateChart() {
@@ -1664,7 +1684,7 @@ function updateChart() {
         narrativeParts.push("DOW annual-average overlay is active for market context.");
     }
     setText("chartNarrative", narrativeParts.join(" "));
-    updateNewsBubble(filtered);
+    updateNewsHeadlinesPanel(filtered);
 }
 
 function initSlider() {
