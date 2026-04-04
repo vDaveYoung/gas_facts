@@ -1549,14 +1549,17 @@ function updateNewsHeadlinesPanel(filtered) {
         ? withDiff.filter((event) => event.diffDays <= 5)
         : withDiff.filter((event) => sameDay(event.t, selectedDate));
 
-    const sortedMatches = matchedEvents.sort((a, b) => a.diffDays - b.diffDays);
+    const sortedMatches = (matchedEvents.length ? matchedEvents : withDiff)
+        .sort((a, b) => a.diffDays - b.diffDays)
+        .slice(0, 8);
     const worldHeadlines = sortedMatches.filter((item) => item.category === "world").slice(0, 4);
     const oilHeadlines = sortedMatches.filter((item) => item.category === "oil").slice(0, 4);
 
     const modeLabel = state.newsMatchMode === "window10"
         ? "10-day window (5 back / 5 forward)"
         : "Exact date";
-    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Mode: ${modeLabel}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
+    const fallbackNote = matchedEvents.length ? "" : " No direct matches found; showing nearest context headlines.";
+    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Mode: ${modeLabel}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.${fallbackNote}`);
 
     worldList.innerHTML = worldHeadlines.length ? worldHeadlines.map((item) =>
         `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
@@ -1668,9 +1671,12 @@ function updateChart() {
                     mode: "index",
                     intersect: false
                 },
-                onClick: (_event, elements, chart) => {
-                    if (!elements || !elements.length) return;
-                    const first = elements[0];
+                onClick: (event, elements, chart) => {
+                    const resolved = (elements && elements.length)
+                        ? elements
+                        : chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+                    if (!resolved || !resolved.length) return;
+                    const first = resolved[0];
                     const dataset = chart?.data?.datasets?.[first.datasetIndex];
                     const point = dataset?.data?.[first.index];
                     const xValue = point?.x || point?.t;
