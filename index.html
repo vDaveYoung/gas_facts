@@ -744,10 +744,13 @@
         <div class="controls-top">
             <div>
                 <div class="range-pills" id="rangePills">
+                    <button class="range-pill" data-years="1" type="button">Last 1Y</button>
                     <button class="range-pill" data-years="5" type="button">Last 5Y</button>
                     <button class="range-pill" data-years="10" type="button">Last 10Y</button>
                     <button class="range-pill" data-years="20" type="button">Last 20Y</button>
                     <button class="range-pill" data-mode="full" type="button">All Data</button>
+                    <button class="range-pill" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
+                    <button class="range-pill" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
                 </div>
             </div>
 
@@ -824,7 +827,7 @@
         <div class="section-title" style="margin-bottom: 8px;">
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Oil Production Context</h2>
-                <p>Annual crude oil production from EIA international data in thousand barrels per day (TBPD).</p>
+                <p>Annual crude oil production for the top 25 producing countries (TBPD).</p>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleProductionSection" type="button" aria-expanded="true">Collapse</button>
         </div>
@@ -1048,7 +1051,8 @@ const state = {
         saudi: [],
         russia: [],
         canada: [],
-        uae: []
+        uae: [],
+        topProducersContext: []
     },
     chart: null,
     productionChart: null,
@@ -1066,6 +1070,7 @@ const state = {
     showProductionOverlay: false,
     showNewsBubble: true,
     hoveredSeriesLabel: "",
+    productionHoverIndex: null,
     newsMatchMode: "exact",
     showDetailedDates: false,
     selectedNewsDate: null,
@@ -1296,6 +1301,78 @@ function setStatus(text, isError = false) {
 function setHoveredSeriesStatus(label) {
     state.hoveredSeriesLabel = label || "";
     setText("hoverSeriesStatus", label ? `Hovering line: ${label}` : "Hover a line to identify it.");
+}
+
+function withAlpha(hexColor, alpha) {
+    const hex = String(hexColor || "").trim();
+    const shorthand = /^#([a-f\d])([a-f\d])([a-f\d])$/i;
+    const normalized = hex.replace(shorthand, (_, r, g, b) => `#${r}${r}${g}${g}${b}${b}`);
+    const full = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
+    if (!full) return hexColor;
+    const r = Number.parseInt(full[1], 16);
+    const g = Number.parseInt(full[2], 16);
+    const b = Number.parseInt(full[3], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function applyProductionHighlight(chart, activeIndex) {
+    if (!chart) return;
+    const nextIndex = Number.isInteger(activeIndex) ? activeIndex : null;
+    if ((chart.$activeDatasetIndex ?? null) === nextIndex) return;
+
+    chart.$activeDatasetIndex = nextIndex;
+    state.productionHoverIndex = nextIndex;
+
+    chart.data.datasets.forEach((dataset, index) => {
+        const baseColor = dataset.baseColor || dataset.borderColor;
+        dataset.baseColor = baseColor;
+
+        if (nextIndex === null) {
+            dataset.borderColor = baseColor;
+            dataset.borderWidth = 2;
+            dataset.pointRadius = 1.5;
+            dataset.pointHoverRadius = 3;
+            return;
+        }
+
+        if (index === nextIndex) {
+            dataset.borderColor = baseColor;
+            dataset.borderWidth = 3;
+            dataset.pointRadius = 2.5;
+            dataset.pointHoverRadius = 4;
+        } else {
+            dataset.borderColor = withAlpha(baseColor, 0.22);
+            dataset.borderWidth = 1;
+            dataset.pointRadius = 1;
+            dataset.pointHoverRadius = 2;
+        }
+    });
+
+    chart.update("none");
+}
+
+function getSeriesValueAtDate(points, targetDate) {
+    if (!Array.isArray(points) || !points.length) return NaN;
+    const targetMs = targetDate instanceof Date && !Number.isNaN(targetDate.getTime())
+        ? targetDate.getTime()
+        : points[points.length - 1].x?.getTime?.();
+
+    if (!Number.isFinite(targetMs)) {
+        return Number.isFinite(points[points.length - 1]?.y) ? points[points.length - 1].y : NaN;
+    }
+
+    let selected = points[0];
+    for (const point of points) {
+        const xMs = point?.x instanceof Date ? point.x.getTime() : NaN;
+        if (!Number.isFinite(xMs)) continue;
+        if (xMs <= targetMs) {
+            selected = point;
+            continue;
+        }
+        break;
+    }
+
+    return Number.isFinite(selected?.y) ? selected.y : NaN;
 }
 
 function wireSectionCollapse(buttonId, contentId) {
@@ -1804,8 +1881,49 @@ async function fetchProductionSeriesForRegion(regionId, sourceLabel) {
     return normalizeProductionRows(rows, sourceLabel);
 }
 
+async function fetchTopProducerCountryList(limit = 25) {
+    const url = new URL("https://api.eia.gov/v2/international/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "annual");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[productId][]", "57");
+    url.searchParams.set("facets[activityId][]", "1");
+    url.searchParams.set("facets[unit][]", "TBPD");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "desc");
+    url.searchParams.set("start", String(new Date().getFullYear() - 2));
+    url.searchParams.set("length", "5000");
+
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error("Top producer ranking fetch failed");
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+
+    const countryRows = rows
+        .filter((row) => row?.countryRegionTypeId === "c")
+        .map((row) => ({
+            id: row.countryRegionId,
+            name: row.countryRegionName,
+            period: Number.parseInt(row.period, 10),
+            value: Number.parseFloat(row.value)
+        }))
+        .filter((row) => row.id && row.name && Number.isFinite(row.period) && Number.isFinite(row.value));
+
+    if (!countryRows.length) return [];
+
+    const latestPeriod = Math.max(...countryRows.map((row) => row.period));
+    return countryRows
+        .filter((row) => row.period === latestPeriod && row.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit)
+        .map((row) => ({ id: row.id, name: row.name }));
+}
+
 async function fetchProductionSeries() {
     try {
+        const topProducerCountries = await fetchTopProducerCountryList(25);
+
         const [usa, world, opec, saudi, russia, canada, uae] = await Promise.all([
             fetchProductionSeriesForRegion("USA", "eia-intl-usa-tbpd"),
             fetchProductionSeriesForRegion("WORL", "eia-intl-world-tbpd"),
@@ -1815,9 +1933,27 @@ async function fetchProductionSeries() {
             fetchProductionSeriesForRegion("CAN", "eia-intl-canada-tbpd"),
             fetchProductionSeriesForRegion("ARE", "eia-intl-uae-tbpd")
         ]);
-        return { usa, world, opec, saudi, russia, canada, uae };
+
+        const topProducersContext = await Promise.all(
+            topProducerCountries.map(async (country) => {
+                const sourceLabel = `eia-intl-${String(country.id).toLowerCase()}-tbpd`;
+                const series = await fetchProductionSeriesForRegion(country.id, sourceLabel);
+                return { id: country.id, name: country.name, series };
+            })
+        );
+
+        return {
+            usa,
+            world,
+            opec,
+            saudi,
+            russia,
+            canada,
+            uae,
+            topProducersContext: topProducersContext.filter((item) => Array.isArray(item.series) && item.series.length)
+        };
     } catch {
-        return { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [] };
+        return { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [], topProducersContext: [] };
     }
 }
 
@@ -1827,48 +1963,51 @@ function updateProductionChart() {
 
     const rangeStart = state.selectedStart || state.allData[0]?.t;
     const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+    const legendReferenceDate = state.selectedNewsDate instanceof Date
+        && !Number.isNaN(state.selectedNewsDate.getTime())
+        && state.selectedNewsDate >= rangeStart
+        && state.selectedNewsDate <= rangeEnd
+        ? state.selectedNewsDate
+        : rangeEnd;
     const toFilteredSeries = (series) => buildAnnualOverlayPoints(series, rangeStart, rangeEnd);
 
-    const world = toFilteredSeries(state.productionSeries.world);
-    const opec = toFilteredSeries(state.productionSeries.opec);
-    const usa = toFilteredSeries(state.productionSeries.usa);
-
-    const datasets = [
-        {
-            label: "World crude production",
-            data: world,
-            borderColor: "#7dd3fc",
-            backgroundColor: "rgba(125, 211, 252, 0.1)",
-            borderWidth: 2,
-            pointRadius: 2,
-            tension: 0.16,
-            fill: false
-        },
-        {
-            label: "OPEC crude production",
-            data: opec,
-            borderColor: "#f59e0b",
-            backgroundColor: "rgba(245, 158, 11, 0.1)",
-            borderWidth: 2,
-            pointRadius: 2,
-            tension: 0.16,
-            fill: false
-        },
-        {
-            label: "U.S. crude production",
-            data: usa,
-            borderColor: "#34d399",
-            backgroundColor: "rgba(52, 211, 153, 0.1)",
-            borderWidth: 2,
-            pointRadius: 2,
-            tension: 0.16,
-            fill: false
-        }
+    const palette = [
+        "#34d399", "#a78bfa", "#fb7185", "#fbbf24", "#06b6d4",
+        "#f97316", "#22c55e", "#60a5fa", "#f472b6", "#84cc16",
+        "#2dd4bf", "#c084fc", "#eab308", "#f43f5e", "#38bdf8",
+        "#10b981", "#8b5cf6", "#ef4444", "#14b8a6", "#a3e635",
+        "#f59e0b", "#3b82f6", "#ec4899", "#4ade80", "#0ea5e9"
     ];
+
+    const topProducerSeries = Array.isArray(state.productionSeries.topProducersContext)
+        ? state.productionSeries.topProducersContext
+        : [];
+
+    const datasets = topProducerSeries
+        .map((producer, index) => {
+            const points = toFilteredSeries(producer.series);
+            const baseColor = palette[index % palette.length];
+            return {
+                label: `#${index + 1} ${producer.name}`,
+                data: points,
+                baseColor,
+                borderColor: baseColor,
+                backgroundColor: "rgba(255, 255, 255, 0.04)",
+                borderWidth: 2,
+                pointRadius: 1.5,
+                pointHoverRadius: 3,
+                tension: 0.14,
+                fill: false
+            };
+        })
+        .filter((dataset) => dataset.data.length);
 
     if (state.productionChart) {
         state.productionChart.data.datasets = datasets;
-        state.productionChart.update("none");
+        const activeIndex = Number.isInteger(state.productionHoverIndex) && state.productionHoverIndex < datasets.length
+            ? state.productionHoverIndex
+            : null;
+        applyProductionHighlight(state.productionChart, activeIndex);
     } else {
         state.productionChart = new Chart(ctx, {
             type: "line",
@@ -1877,6 +2016,14 @@ function updateProductionChart() {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: "index", intersect: false },
+                onHover: (event, elements, chart) => {
+                    const resolved = (elements && elements.length)
+                        ? elements
+                        : chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+                    const activeIndex = resolved?.length ? resolved[0].datasetIndex : null;
+                    chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
+                    applyProductionHighlight(chart, activeIndex);
+                },
                 scales: {
                     x: {
                         type: "time",
@@ -1894,11 +2041,55 @@ function updateProductionChart() {
                 },
                 plugins: {
                     legend: {
+                        onHover: (_event, legendItem, legend) => {
+                            const chart = legend?.chart;
+                            if (!chart) return;
+                            chart.canvas.style.cursor = "pointer";
+                            applyProductionHighlight(chart, legendItem.datasetIndex);
+                        },
+                        onLeave: (_event, legend) => {
+                            const chart = legend?.chart;
+                            if (!chart) return;
+                            chart.canvas.style.cursor = "default";
+                            applyProductionHighlight(chart, null);
+                        },
                         labels: {
                             color: "#edf8f4",
                             usePointStyle: true,
                             boxWidth: 8,
-                            boxHeight: 8
+                            boxHeight: 8,
+                            generateLabels: (chart) => {
+                                const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                const activeIndex = chart.$activeDatasetIndex;
+                                return labels.map((item) => {
+                                    const dataset = chart.data.datasets[item.datasetIndex] || {};
+                                    const baseColor = dataset.baseColor || dataset.borderColor || item.strokeStyle;
+                                    const isActive = Number.isInteger(activeIndex) && activeIndex === item.datasetIndex;
+                                    const pointValue = getSeriesValueAtDate(dataset.data, legendReferenceDate);
+                                    const valueText = Number.isFinite(pointValue) ? formatTbpd(pointValue) : "--";
+                                    const legendText = `${dataset.label} - ${valueText}`;
+
+                                    if (isActive) {
+                                        return {
+                                            ...item,
+                                            text: legendText,
+                                            fillStyle: "#ffffff",
+                                            strokeStyle: baseColor,
+                                            lineWidth: 3,
+                                            pointStyle: "circle"
+                                        };
+                                    }
+
+                                    return {
+                                        ...item,
+                                        text: legendText,
+                                        fillStyle: baseColor,
+                                        strokeStyle: baseColor,
+                                        lineWidth: 1,
+                                        pointStyle: "circle"
+                                    };
+                                });
+                            }
                         }
                     },
                     tooltip: {
@@ -1916,11 +2107,11 @@ function updateProductionChart() {
         });
     }
 
-    const hasAny = world.length || opec.length || usa.length;
+    const hasAny = datasets.length > 0;
     if (!hasAny) {
         setText("productionMeta", "No production points available in this selected window.");
     } else {
-        setText("productionMeta", `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}.`);
+        setText("productionMeta", `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Legend values reference ${formatDate(legendReferenceDate)}.`);
     }
 }
 
@@ -2344,6 +2535,42 @@ function applyFullRange() {
     ]);
 }
 
+function shiftSelectedRangeByYears(yearDelta) {
+    if (!state.slider || !state.selectedStart || !state.selectedEnd || !state.allData.length) return;
+
+    state.selectedPreset = null;
+    state.selectedNewsDate = null;
+
+    const minAllowed = state.allData[0].t.getTime();
+    const maxAllowed = state.allData[state.allData.length - 1].t.getTime();
+
+    const shiftedStart = new Date(state.selectedStart);
+    const shiftedEnd = new Date(state.selectedEnd);
+    shiftedStart.setFullYear(shiftedStart.getFullYear() + yearDelta);
+    shiftedEnd.setFullYear(shiftedEnd.getFullYear() + yearDelta);
+
+    let startMs = shiftedStart.getTime();
+    let endMs = shiftedEnd.getTime();
+
+    if (startMs < minAllowed) {
+        const delta = minAllowed - startMs;
+        startMs = minAllowed;
+        endMs += delta;
+    }
+
+    if (endMs > maxAllowed) {
+        const delta = endMs - maxAllowed;
+        endMs = maxAllowed;
+        startMs -= delta;
+    }
+
+    if (startMs < minAllowed) {
+        startMs = minAllowed;
+    }
+
+    state.slider.set([startMs, endMs]);
+}
+
 function normalizeSeriesRows(rows, sourceLabel) {
     return (rows || [])
         .map((row) => ({
@@ -2408,7 +2635,7 @@ async function fetchData() {
         state.dowSeries = Array.isArray(dowSeries) ? dowSeries : [];
         state.productionSeries = productionSeries && typeof productionSeries === "object"
             ? productionSeries
-            : { usa: [], world: [], opec: [] };
+            : { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [], topProducersContext: [] };
 
         if (!state.allData.length) {
             throw new Error("The dataset contained no valid price points");
@@ -2491,6 +2718,13 @@ function wireInteractions() {
     document.getElementById("rangePills").addEventListener("click", (event) => {
         const button = event.target.closest(".range-pill");
         if (!button) return;
+
+        const shiftYears = Number(button.dataset.shiftYears || 0);
+        if (shiftYears) {
+            shiftSelectedRangeByYears(shiftYears);
+            return;
+        }
+
         const years = Number(button.dataset.years || 0);
         if (years) {
             applyYearsRange(years);
