@@ -732,6 +732,22 @@
     <section class="context-charts">
         <div class="section-title" style="margin-bottom: 8px;">
             <div>
+                <h2 style="margin: 0; font-size: 1.2rem;">Oil Production Context</h2>
+                <p>Annual crude oil production from EIA international data in thousand barrels per day (TBPD).</p>
+            </div>
+            <button class="btn btn-secondary section-collapse-btn" id="toggleProductionSection" type="button" aria-expanded="true">Collapse</button>
+        </div>
+        <div id="productionContent" class="collapsible-content">
+            <p class="status-inline" id="productionMeta">Loading production series...</p>
+            <div class="context-chart-box">
+                <canvas id="productionChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <section class="context-charts">
+        <div class="section-title" style="margin-bottom: 8px;">
+            <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
                 <p>Collapse this panel when you want to focus only on the main timeline.</p>
             </div>
@@ -807,6 +823,13 @@
                     <span>Overlay DOW average</span>
                     <label class="switch">
                         <input type="checkbox" id="dowToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Overlay oil production (OPEC / U.S. / World)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="productionToggle">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -1014,7 +1037,13 @@ const NEWS_EVENTS = [
 const state = {
     allData: [],
     dowSeries: [],
+    productionSeries: {
+        usa: [],
+        world: [],
+        opec: []
+    },
     chart: null,
+    productionChart: null,
     presidentBarChart: null,
     congressBarChart: null,
     slider: null,
@@ -1026,6 +1055,7 @@ const state = {
     showCongressOverlay: false,
     showVehiclesOverlay: false,
     showDowOverlay: false,
+    showProductionOverlay: false,
     showNewsBubble: true,
     newsMatchMode: "exact",
     showDetailedDates: false,
@@ -1203,6 +1233,11 @@ function formatDate(date) {
 function formatCompactDate(date) {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "--";
     return date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+}
+
+function formatTbpd(value) {
+    if (!Number.isFinite(value)) return "--";
+    return `${(value / 1000).toFixed(1)}M bpd`;
 }
 
 function average(values) {
@@ -1575,6 +1610,42 @@ async function fetchDateContextNews(selectedDate, dayWindow) {
     }
 }
 
+function buildCuratedDriverFallback(selectedDate, dayWindow) {
+    const selectedYear = selectedDate.getFullYear();
+    const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const yearWindow = dayWindow > 0 ? 2 : 1;
+    const hardMaxDays = yearWindow * 366;
+
+    const candidates = NEWS_EVENTS
+        .filter((event) => Math.abs(event.t.getFullYear() - selectedYear) <= yearWindow)
+        .map((event) => ({ ...event, diffDays: Math.abs(event.t.getTime() - selectedDate.getTime()) / DAY_MS }));
+
+    const matchedEvents = state.newsMatchMode === "window10"
+        ? candidates.filter((event) => event.diffDays <= 45)
+        : candidates.filter((event) => sameDay(event.t, selectedDate));
+
+    const ranked = (matchedEvents.length ? matchedEvents : candidates)
+        .filter((event) => event.diffDays <= hardMaxDays)
+        .sort((a, b) => a.diffDays - b.diffDays)
+        .slice(0, 8);
+
+    return {
+        world: ranked.filter((item) => item.category === "world").slice(0, 4).map((item) => ({
+            dateLabel: formatDate(item.t),
+            title: item.title,
+            detail: item.detail,
+            link: item.link
+        })),
+        oil: ranked.filter((item) => item.category === "oil").slice(0, 4).map((item) => ({
+            dateLabel: formatDate(item.t),
+            title: item.title,
+            detail: item.detail,
+            link: item.link
+        }))
+    };
+}
+
 function renderNewsListItems(items, emptyText) {
     if (!items.length) return `<li>${emptyText}</li>`;
     return items.map((item) =>
@@ -1625,41 +1696,187 @@ async function updateNewsHeadlinesPanel(filtered) {
     const datedNews = await fetchDateContextNews(selectedDate, dayWindow);
     if (requestToken !== state.newsRequestToken) return;
 
-    const worldHeadlines = datedNews.world;
-    const oilHeadlines = datedNews.oil;
+    const worldHeadlines = [...datedNews.world];
+    const oilHeadlines = [...datedNews.oil];
+    const curatedFallback = buildCuratedDriverFallback(selectedDate, dayWindow);
 
-    const usingFallback = !worldHeadlines.length && !oilHeadlines.length;
-    if (usingFallback) {
-        const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-        const DAY_MS = 24 * 60 * 60 * 1000;
-        const withDiff = NEWS_EVENTS.map((event) => ({ ...event, diffDays: Math.abs(event.t.getTime() - selectedDate.getTime()) / DAY_MS }));
-        const matchedEvents = state.newsMatchMode === "window10"
-            ? withDiff.filter((event) => event.diffDays <= 5)
-            : withDiff.filter((event) => sameDay(event.t, selectedDate));
-        const sortedMatches = (matchedEvents.length ? matchedEvents : withDiff)
-            .sort((a, b) => a.diffDays - b.diffDays)
-            .slice(0, 8);
-        worldHeadlines.push(...sortedMatches.filter((item) => item.category === "world").slice(0, 4).map((item) => ({
-            dateLabel: formatDate(item.t),
-            title: item.title,
-            detail: item.detail,
-            link: item.link
-        })));
-        oilHeadlines.push(...sortedMatches.filter((item) => item.category === "oil").slice(0, 4).map((item) => ({
-            dateLabel: formatDate(item.t),
-            title: item.title,
-            detail: item.detail,
-            link: item.link
-        })));
+    if (!worldHeadlines.length) {
+        worldHeadlines.push(...curatedFallback.world);
+    }
+    if (!oilHeadlines.length) {
+        oilHeadlines.push(...curatedFallback.oil);
     }
 
-    const sourceLabel = usingFallback ? "Curated fallback" : "GDELT historical news";
+    const sourceParts = [];
+    if (datedNews.world.length || datedNews.oil.length) sourceParts.push("GDELT historical news");
+    if (curatedFallback.world.length || curatedFallback.oil.length) sourceParts.push("year-matched curated drivers");
+    if (!sourceParts.length) sourceParts.push("no relevant headlines found");
+    const sourceLabel = sourceParts.join(" + ");
     setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Mode: ${modeLabel}. Trend near date is ${direction}, gas at ${formatCurrency(current)}. Source: ${sourceLabel}.`);
 
     worldList.innerHTML = renderNewsListItems(worldHeadlines, `No world headlines found for ${modeLabel.toLowerCase()}.`);
     oilList.innerHTML = renderNewsListItems(oilHeadlines, `No oil/gas headlines found for ${modeLabel.toLowerCase()}.`);
 
     panel.hidden = false;
+}
+
+function normalizeProductionRows(rows, sourceLabel) {
+    return (rows || [])
+        .map((row) => {
+            const year = Number.parseInt(row.period, 10);
+            const value = Number.parseFloat(row.value);
+            return {
+                t: new Date(`${year}-07-01`),
+                y: value,
+                source: sourceLabel
+            };
+        })
+        .filter((point) => Number.isFinite(point.t.getTime()) && Number.isFinite(point.y))
+        .sort((a, b) => a.t - b.t);
+}
+
+async function fetchProductionSeriesForRegion(regionId, sourceLabel) {
+    const url = new URL("https://api.eia.gov/v2/international/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "annual");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[productId][]", "57");
+    url.searchParams.set("facets[activityId][]", "1");
+    url.searchParams.set("facets[countryRegionId][]", regionId);
+    url.searchParams.set("facets[unit][]", "TBPD");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "asc");
+    url.searchParams.set("start", "1983");
+    url.searchParams.set("length", "5000");
+
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error(`Production fetch failed for ${regionId}`);
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return normalizeProductionRows(rows, sourceLabel);
+}
+
+async function fetchProductionSeries() {
+    try {
+        const [usa, world, opec] = await Promise.all([
+            fetchProductionSeriesForRegion("USA", "eia-intl-usa-tbpd"),
+            fetchProductionSeriesForRegion("WORL", "eia-intl-world-tbpd"),
+            fetchProductionSeriesForRegion("OPEC", "eia-intl-opec-tbpd")
+        ]);
+        return { usa, world, opec };
+    } catch {
+        return { usa: [], world: [], opec: [] };
+    }
+}
+
+function updateProductionChart() {
+    const ctx = document.getElementById("productionChart")?.getContext("2d");
+    if (!ctx) return;
+
+    const toFilteredSeries = (series) => series
+        .filter((point) => {
+            if (state.selectedStart && point.t < state.selectedStart) return false;
+            if (state.selectedEnd && point.t > state.selectedEnd) return false;
+            return true;
+        })
+        .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+
+    const world = toFilteredSeries(state.productionSeries.world);
+    const opec = toFilteredSeries(state.productionSeries.opec);
+    const usa = toFilteredSeries(state.productionSeries.usa);
+
+    const datasets = [
+        {
+            label: "World crude production",
+            data: world,
+            borderColor: "#7dd3fc",
+            backgroundColor: "rgba(125, 211, 252, 0.1)",
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.16,
+            fill: false
+        },
+        {
+            label: "OPEC crude production",
+            data: opec,
+            borderColor: "#f59e0b",
+            backgroundColor: "rgba(245, 158, 11, 0.1)",
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.16,
+            fill: false
+        },
+        {
+            label: "U.S. crude production",
+            data: usa,
+            borderColor: "#34d399",
+            backgroundColor: "rgba(52, 211, 153, 0.1)",
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.16,
+            fill: false
+        }
+    ];
+
+    if (state.productionChart) {
+        state.productionChart.data.datasets = datasets;
+        state.productionChart.update("none");
+    } else {
+        state.productionChart = new Chart(ctx, {
+            type: "line",
+            data: { datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                scales: {
+                    x: {
+                        type: "time",
+                        time: { unit: "year" },
+                        grid: { color: "rgba(255,255,255,0.08)" },
+                        ticks: { color: "#9ab8af" }
+                    },
+                    y: {
+                        grid: { color: "rgba(255,255,255,0.08)" },
+                        ticks: {
+                            color: "#9ab8af",
+                            callback: (value) => formatTbpd(Number(value))
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "#edf8f4",
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            boxHeight: 8
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: "rgba(4, 15, 12, 0.95)",
+                        borderColor: "rgba(255,255,255,0.12)",
+                        borderWidth: 1,
+                        callbacks: {
+                            title: (items) => formatDate(new Date(items[0].parsed.x)),
+                            label: (context) => `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`,
+                            footer: () => "Source: EIA International crude production (TBPD)"
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const hasAny = world.length || opec.length || usa.length;
+    if (!hasAny) {
+        setText("productionMeta", "No production points available in this selected window.");
+    } else {
+        const fallbackStart = state.allData[0]?.t;
+        const fallbackEnd = state.allData[state.allData.length - 1]?.t;
+        setText("productionMeta", `Showing annual crude production context for ${formatCompactDate(state.selectedStart || fallbackStart)} to ${formatCompactDate(state.selectedEnd || fallbackEnd)}.`);
+    }
 }
 
 function updateChart() {
@@ -1735,6 +1952,56 @@ function updateChart() {
         }
     }
 
+    if (state.showProductionOverlay) {
+        const toMainOverlayPoints = (series) => series
+            .filter((point) => point.t >= filtered[0].t && point.t <= filtered[filtered.length - 1].t)
+            .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+
+        const worldPoints = toMainOverlayPoints(state.productionSeries.world);
+        const opecPoints = toMainOverlayPoints(state.productionSeries.opec);
+        const usaPoints = toMainOverlayPoints(state.productionSeries.usa);
+
+        if (worldPoints.length) {
+            datasets.push({
+                label: "World crude production",
+                data: worldPoints,
+                borderColor: "#7dd3fc",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+        if (opecPoints.length) {
+            datasets.push({
+                label: "OPEC crude production",
+                data: opecPoints,
+                borderColor: "#f59e0b",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+        if (usaPoints.length) {
+            datasets.push({
+                label: "U.S. crude production",
+                data: usaPoints,
+                borderColor: "#34d399",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+    }
+
     const minDate = filtered[0].t;
     const maxDate = filtered[filtered.length - 1].t;
 
@@ -1806,6 +2073,14 @@ function updateChart() {
                             color: "#ffd166",
                             callback: (value) => Number(value).toLocaleString()
                         }
+                    },
+                    y3: {
+                        position: "right",
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: "#7dd3fc",
+                            callback: (value) => formatTbpd(Number(value))
+                        }
                     }
                 },
                 plugins: {
@@ -1830,6 +2105,9 @@ function updateChart() {
                                 if (context.dataset.label === "DOW annual average") {
                                     return `${context.dataset.label}: ${Math.round(context.parsed.y).toLocaleString()}`;
                                 }
+                                if (context.dataset.label === "World crude production" || context.dataset.label === "OPEC crude production" || context.dataset.label === "U.S. crude production") {
+                                    return `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`;
+                                }
                                 return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
                             },
                             footer: (items) => {
@@ -1842,6 +2120,9 @@ function updateChart() {
                                     return source === "dow-fallback-annual-average"
                                         ? "DOW annual average (fallback series)"
                                         : "FRED DJIA annual average";
+                                }
+                                if (items?.[0]?.dataset?.label === "World crude production" || items?.[0]?.dataset?.label === "OPEC crude production" || items?.[0]?.dataset?.label === "U.S. crude production") {
+                                    return "EIA international annual crude production (TBPD)";
                                 }
                                 const source = items?.[0]?.raw?.source;
                                 if (source === "monthly-total-pta") return "Source granularity: monthly";
@@ -1869,7 +2150,13 @@ function updateChart() {
     if (state.showDowOverlay) {
         narrativeParts.push("DOW annual-average overlay is active for market context.");
     }
+    if (state.showProductionOverlay) {
+        narrativeParts.push("Oil production overlays are active (World, OPEC, and U.S. annual TBPD).");
+    } else {
+        narrativeParts.push("Use the production overlay to compare price movement with supply-side context.");
+    }
     setText("chartNarrative", narrativeParts.join(" "));
+    updateProductionChart();
     updateNewsHeadlinesPanel(filtered);
 }
 
@@ -1969,11 +2256,12 @@ async function fetchData() {
     const legacyMonthlyUrl = `https://api.eia.gov/v2/petroleum/pri/allmg/data/?api_key=${API_KEY}&frequency=monthly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPM0&facets[process][]=PTA&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
 
     try {
-        const [totalResponse, regularResponse, legacyResponse, dowSeries] = await Promise.all([
+        const [totalResponse, regularResponse, legacyResponse, dowSeries, productionSeries] = await Promise.all([
             fetch(totalGasWeeklyUrl),
             fetch(regularGasWeeklyUrl),
             fetch(legacyMonthlyUrl),
-            fetchDowSeries()
+            fetchDowSeries(),
+            fetchProductionSeries()
         ]);
 
         const totalPayload = await totalResponse.json();
@@ -1995,6 +2283,9 @@ async function fetchData() {
         const legacyMonthly = normalizeSeriesRows(legacyRows, "monthly-total-pta");
         state.allData = buildBlendedSeries(totalWeekly, regularWeekly, legacyMonthly);
         state.dowSeries = Array.isArray(dowSeries) ? dowSeries : [];
+        state.productionSeries = productionSeries && typeof productionSeries === "object"
+            ? productionSeries
+            : { usa: [], world: [], opec: [] };
 
         if (!state.allData.length) {
             throw new Error("The dataset contained no valid price points");
@@ -2048,6 +2339,10 @@ function wireInteractions() {
         state.showDowOverlay = event.target.checked;
         updateChart();
     });
+    document.getElementById("productionToggle").addEventListener("change", (event) => {
+        state.showProductionOverlay = event.target.checked;
+        updateChart();
+    });
     document.getElementById("newsToggle").addEventListener("change", (event) => {
         state.showNewsBubble = event.target.checked;
         updateChart();
@@ -2068,6 +2363,7 @@ function wireInteractions() {
     wireSectionCollapse("toggleControlsSection", "controlsContent");
     wireSectionCollapse("toggleFactsSection", "factsContent");
     wireSectionCollapse("toggleContextSection", "contextContent");
+    wireSectionCollapse("toggleProductionSection", "productionContent");
 
     document.getElementById("rangePills").addEventListener("click", (event) => {
         const button = event.target.closest(".range-pill");
@@ -2106,6 +2402,7 @@ function wireInteractions() {
 
     state.showNewsBubble = document.getElementById("newsToggle").checked;
     state.showDetailedDates = document.getElementById("dateAxisToggle").checked;
+    state.showProductionOverlay = document.getElementById("productionToggle").checked;
 }
 
 wireInteractions();
