@@ -444,8 +444,8 @@
         }
 
         .chart-box {
-            height: 56vh;
-            min-height: 360px;
+            height: 84vh;
+            min-height: 540px;
             position: relative;
         }
 
@@ -539,9 +539,127 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        .graph-bookend-wrap {
+            display: grid;
+            grid-template-columns: 34px minmax(0, 1fr) 34px;
+            gap: 8px;
+            align-items: stretch;
+            margin-top: 8px;
+        }
+
+        .bookend-btn {
+            border-radius: 12px;
+            padding: 4px 2px;
+            width: 34px;
+            height: 100%;
+            min-height: 100%;
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.12);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bookend-btn:hover,
+        .bookend-btn:focus-visible {
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .bookend-btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.1));
+            opacity: 0.95;
+            transition: opacity 0.18s ease, background 0.18s ease;
+        }
+
+        .bookend-btn:hover::before,
+        .bookend-btn:focus-visible::before {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.14));
+        }
+
+        .bookend-btn-left::before {
+            clip-path: polygon(100% 0, 42% 0, 42% 24%, 0 50%, 42% 76%, 42% 100%, 100% 100%);
+        }
+
+        .bookend-btn-right::before {
+            clip-path: polygon(0 0, 58% 0, 58% 24%, 100% 50%, 58% 76%, 58% 100%, 0 100%);
+        }
+
+        .bookend-glyph {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            min-height: 100%;
+            position: relative;
+        }
+
+        .bookend-year {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            font-size: 1.45rem;
+            line-height: 1;
+            font-weight: 700;
+            color: rgba(10, 22, 19, 0.86);
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
+        }
+
         #productionContent .context-chart-box {
             min-height: 560px;
             height: 72vh;
+        }
+
+        .gov-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .gov-stack-row {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+
+        .gov-stack-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .gov-stack-label {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(154, 184, 175, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            width: 20px;
+            flex-shrink: 0;
+        }
+
+        .gov-stack .context-chart-box {
+            min-height: 200px;
+            height: 28vh;
         }
 
         .section-collapse-btn {
@@ -647,8 +765,8 @@
             }
 
             .chart-box {
-                min-height: 300px;
-                height: 48vh;
+                min-height: 450px;
+                height: 72vh;
             }
         }
     </style>
@@ -718,8 +836,12 @@
                 <div class="status-inline" id="hoverSeriesStatus">Hover a line to identify it.</div>
             </div>
         </div>
-        <div class="chart-box">
-            <canvas id="mainChart"></canvas>
+        <div class="graph-bookend-wrap">
+            <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+            <div class="chart-box" style="margin-top:0;">
+                <canvas id="mainChart"></canvas>
+            </div>
+            <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
         </div>
         <div class="news-panel" id="newsPanel" hidden>
             <h3>Top News Headlines Near Selected Date</h3>
@@ -767,10 +889,6 @@
                 </div>
                 <div class="toggle-group">
                     <span>Overlay presidential terms</span>
-                    <div class="range-pills" style="margin-top:8px;">
-                        <button class="range-pill shift-window-btn" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
-                        <button class="range-pill shift-window-btn" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
-                    </div>
                     <label class="switch">
                         <input type="checkbox" id="presidencyToggle">
                         <span class="slider"></span>
@@ -798,6 +916,20 @@
                     </label>
                 </div>
                 <div class="toggle-group">
+                    <span>Overlay WTI crude ÷ 42 (per-gallon equivalent)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="oilPerGallonToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Overlay Brent crude ÷ 42 (per-gallon equivalent)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="brentPerGallonToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
                     <span>Overlay oil production (World / OPEC / U.S. + top-5 producers)</span>
                     <label class="switch">
                         <input type="checkbox" id="productionToggle">
@@ -816,7 +948,7 @@
                     <button class="range-pill" id="newsModeButton" type="button" aria-pressed="false">Exact Date</button>
                 </div>
                 <div class="toggle-group">
-                    <span>Main graph detailed dates</span>
+                    <span>Force detailed dates on time charts</span>
                     <label class="switch">
                         <input type="checkbox" id="dateAxisToggle">
                         <span class="slider"></span>
@@ -835,17 +967,17 @@
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Oil Production Context</h2>
                 <p>Annual crude oil production for the top 25 producing countries (TBPD).</p>
-                <div class="range-pills" style="margin-top:8px;">
-                    <button class="range-pill shift-window-btn" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
-                    <button class="range-pill shift-window-btn" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
-                </div>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleProductionSection" type="button" aria-expanded="true">Collapse</button>
         </div>
         <div id="productionContent" class="collapsible-content">
             <p class="status-inline" id="productionMeta">Loading production series...</p>
-            <div class="context-chart-box">
-                <canvas id="productionChart"></canvas>
+            <div class="graph-bookend-wrap">
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                <div class="context-chart-box" style="margin-top:0;">
+                    <canvas id="productionChart"></canvas>
+                </div>
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
             </div>
         </div>
     </section>
@@ -854,28 +986,42 @@
         <div class="section-title" style="margin-bottom: 8px;">
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
-                <p>Collapse this panel when you want to focus only on the main timeline.</p>
-                <div class="range-pills" style="margin-top:8px;">
-                    <button class="range-pill shift-window-btn" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
-                    <button class="range-pill shift-window-btn" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
-                </div>
+                <p>Oil-linked political context stays on this page: President (4yr) · Senate (6yr) · House (2yr). <a href="politics.html" style="color:#9ab8af;">Open full political history →</a></p>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleContextSection" type="button" aria-expanded="true">Collapse</button>
         </div>
         <div id="contextContent" class="collapsible-content">
-        <div>
-            <h3>Average Gas Price by Presidential Term</h3>
-            <p class="status-inline">Bars show average gas price over each full term.</p>
-        </div>
-        <div class="context-chart-box">
-            <canvas id="presidentBarChart"></canvas>
-        </div>
-        <div>
-            <h3>Average Gas Price by House/Senate Period</h3>
-            <p class="status-inline">Bars include seat-count labels for each period.</p>
-        </div>
-        <div class="context-chart-box">
-            <canvas id="congressBarChart"></canvas>
+        <div class="gov-stack">
+            <div class="gov-stack-row">
+                <div class="gov-stack-label">President</div>
+                <div class="graph-bookend-wrap" style="flex:1; min-width:0;">
+                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                    <div class="context-chart-box" style="margin-top:0;">
+                        <canvas id="presidentBarChart"></canvas>
+                    </div>
+                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                </div>
+            </div>
+            <div class="gov-stack-row">
+                <div class="gov-stack-label">Senate</div>
+                <div class="graph-bookend-wrap" style="flex:1; min-width:0;">
+                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                    <div class="context-chart-box" style="margin-top:0;">
+                        <canvas id="senateBarChart"></canvas>
+                    </div>
+                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                </div>
+            </div>
+            <div class="gov-stack-row">
+                <div class="gov-stack-label">House</div>
+                <div class="graph-bookend-wrap" style="flex:1; min-width:0;">
+                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                    <div class="context-chart-box" style="margin-top:0;">
+                        <canvas id="houseBarChart"></canvas>
+                    </div>
+                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                </div>
+            </div>
         </div>
         </div>
     </section>
@@ -955,7 +1101,63 @@ const PARTY_COLORS = {
     OTHER: "rgba(166, 184, 175, 0.2)"
 };
 
+const BARREL_GALLONS = 42;
+
 const PRESIDENTIAL_TERMS = [
+    // Continental Congress Presidents (1776–1781)
+    { start: "1776-07-04", end: "1777-10-29", name: "John Hancock (Pres. of Congress)", party: "OTHER" },
+    { start: "1777-11-01", end: "1778-12-09", name: "Henry Laurens (Pres. of Congress)", party: "OTHER" },
+    { start: "1778-12-10", end: "1779-09-27", name: "John Jay (Pres. of Congress)", party: "OTHER" },
+    { start: "1779-09-28", end: "1781-07-10", name: "Samuel Huntington (Pres. of Congress)", party: "OTHER" },
+    { start: "1781-07-10", end: "1781-11-05", name: "Thomas McKean (Pres. of Congress)", party: "OTHER" },
+    // Confederation Congress Presidents (Articles of Confederation, 1781–1789)
+    { start: "1781-11-05", end: "1782-11-04", name: "John Hanson (Pres. under Articles)", party: "OTHER" },
+    { start: "1782-11-04", end: "1783-12-13", name: "Elias Boudinot (Pres. under Articles)", party: "OTHER" },
+    { start: "1783-12-13", end: "1784-06-03", name: "Thomas Mifflin (Pres. under Articles)", party: "OTHER" },
+    { start: "1784-11-30", end: "1785-11-23", name: "Richard Henry Lee (Pres. under Articles)", party: "OTHER" },
+    { start: "1785-11-23", end: "1786-06-05", name: "John Hancock (Pres. under Articles)", party: "OTHER" },
+    { start: "1786-06-06", end: "1787-02-01", name: "Nathaniel Gorham (Pres. under Articles)", party: "OTHER" },
+    { start: "1787-02-02", end: "1787-10-29", name: "Arthur St. Clair (Pres. under Articles)", party: "OTHER" },
+    { start: "1788-01-22", end: "1789-04-30", name: "Cyrus Griffin (Pres. under Articles)", party: "OTHER" },
+    // U.S. Presidents
+    { start: "1789-04-30", end: "1797-03-04", name: "George Washington", party: "OTHER" },
+    { start: "1797-03-04", end: "1801-03-04", name: "John Adams", party: "OTHER" },
+    { start: "1801-03-04", end: "1809-03-04", name: "Thomas Jefferson", party: "OTHER" },
+    { start: "1809-03-04", end: "1817-03-04", name: "James Madison", party: "OTHER" },
+    { start: "1817-03-04", end: "1825-03-04", name: "James Monroe", party: "OTHER" },
+    { start: "1825-03-04", end: "1829-03-04", name: "John Quincy Adams", party: "OTHER" },
+    { start: "1829-03-04", end: "1837-03-04", name: "Andrew Jackson", party: "D" },
+    { start: "1837-03-04", end: "1841-03-04", name: "Martin Van Buren", party: "D" },
+    { start: "1841-03-04", end: "1841-04-04", name: "William H. Harrison", party: "OTHER" },
+    { start: "1841-04-04", end: "1845-03-04", name: "John Tyler", party: "OTHER" },
+    { start: "1845-03-04", end: "1849-03-04", name: "James K. Polk", party: "D" },
+    { start: "1849-03-04", end: "1850-07-09", name: "Zachary Taylor", party: "OTHER" },
+    { start: "1850-07-09", end: "1853-03-04", name: "Millard Fillmore", party: "OTHER" },
+    { start: "1853-03-04", end: "1857-03-04", name: "Franklin Pierce", party: "D" },
+    { start: "1857-03-04", end: "1861-03-04", name: "James Buchanan", party: "D" },
+    { start: "1861-03-04", end: "1865-04-15", name: "Abraham Lincoln", party: "R" },
+    { start: "1865-04-15", end: "1869-03-04", name: "Andrew Johnson", party: "OTHER" },
+    { start: "1869-03-04", end: "1877-03-04", name: "Ulysses S. Grant", party: "R" },
+    { start: "1877-03-04", end: "1881-03-04", name: "Rutherford B. Hayes", party: "R" },
+    { start: "1881-03-04", end: "1881-09-19", name: "James A. Garfield", party: "R" },
+    { start: "1881-09-19", end: "1885-03-04", name: "Chester A. Arthur", party: "R" },
+    { start: "1885-03-04", end: "1889-03-04", name: "Grover Cleveland", party: "D" },
+    { start: "1889-03-04", end: "1893-03-04", name: "Benjamin Harrison", party: "R" },
+    { start: "1893-03-04", end: "1897-03-04", name: "Grover Cleveland", party: "D" },
+    { start: "1897-03-04", end: "1901-09-14", name: "William McKinley", party: "R" },
+    { start: "1901-09-14", end: "1909-03-04", name: "Theodore Roosevelt", party: "R" },
+    { start: "1909-03-04", end: "1913-03-04", name: "William H. Taft", party: "R" },
+    { start: "1913-03-04", end: "1921-03-04", name: "Woodrow Wilson", party: "D" },
+    { start: "1921-03-04", end: "1923-08-02", name: "Warren G. Harding", party: "R" },
+    { start: "1923-08-02", end: "1929-03-04", name: "Calvin Coolidge", party: "R" },
+    { start: "1929-03-04", end: "1933-03-04", name: "Herbert Hoover", party: "R" },
+    { start: "1933-03-04", end: "1945-04-12", name: "Franklin D. Roosevelt", party: "D" },
+    { start: "1945-04-12", end: "1953-01-20", name: "Harry S. Truman", party: "D" },
+    { start: "1953-01-20", end: "1961-01-20", name: "Dwight D. Eisenhower", party: "R" },
+    { start: "1961-01-20", end: "1963-11-22", name: "John F. Kennedy", party: "D" },
+    { start: "1963-11-22", end: "1969-01-20", name: "Lyndon B. Johnson", party: "D" },
+    { start: "1969-01-20", end: "1974-08-09", name: "Richard Nixon", party: "R" },
+    { start: "1974-08-09", end: "1977-01-20", name: "Gerald Ford", party: "R" },
     { start: "1977-01-20", end: "1981-01-20", name: "Jimmy Carter", party: "D" },
     { start: "1981-01-20", end: "1989-01-20", name: "Ronald Reagan", party: "R" },
     { start: "1989-01-20", end: "1993-01-20", name: "George H.W. Bush", party: "R" },
@@ -972,6 +1174,74 @@ const PRESIDENTIAL_TERMS = [
 }));
 
 const CONGRESSIONAL_CONTROL = [
+    // Continental Congress (unicameral, no party system)
+    { start: "1776-07-04", end: "1781-03-01", house: "OTHER", senate: "OTHER", houseSeats: "—", senateSeats: "—" },
+    // Confederation Congress (Articles of Confederation, unicameral)
+    { start: "1781-03-01", end: "1789-03-04", house: "OTHER", senate: "OTHER", houseSeats: "—", senateSeats: "—" },
+    // 1st–2nd Congress: Federalist majority
+    { start: "1789-03-04", end: "1793-03-04", house: "OTHER", senate: "OTHER", houseSeats: "38-26", senateSeats: "18-8" },
+    // 3rd Congress: Democratic-Republican House gain, Federalist Senate
+    { start: "1793-03-04", end: "1795-12-07", house: "OTHER", senate: "OTHER", houseSeats: "57-48", senateSeats: "16-13" },
+    // 4th–6th Congress: Federalist majority
+    { start: "1795-12-07", end: "1801-03-04", house: "OTHER", senate: "OTHER", houseSeats: "58-48", senateSeats: "20-12" },
+    // 7th–19th Congress: Democratic-Republican era (Era of Good Feelings)
+    { start: "1801-03-04", end: "1827-12-05", house: "OTHER", senate: "OTHER", houseSeats: "144-36", senateSeats: "34-10" },
+    // 20th Congress: Jacksonian majority (Democratic Party founded 1828)
+    { start: "1827-12-05", end: "1829-03-04", house: "D", senate: "D", houseSeats: "119-94", senateSeats: "28-20" },
+    // 21st–26th Congress: Democratic (Jacksonian) era
+    { start: "1829-03-04", end: "1841-03-04", house: "D", senate: "D", houseSeats: "139-74", senateSeats: "26-22" },
+    // 27th Congress: Whig majority (Harrison/Tyler)
+    { start: "1841-03-04", end: "1843-12-04", house: "OTHER", senate: "OTHER", houseSeats: "133-102", senateSeats: "28-22" },
+    // 28th Congress: Democratic House, Whig Senate
+    { start: "1843-12-04", end: "1845-03-04", house: "D", senate: "OTHER", houseSeats: "142-79", senateSeats: "28-25" },
+    // 29th Congress: Democratic both
+    { start: "1845-03-04", end: "1847-12-06", house: "D", senate: "D", houseSeats: "143-77", senateSeats: "34-22" },
+    // 30th Congress: Whig House, Democratic Senate
+    { start: "1847-12-06", end: "1849-03-04", house: "OTHER", senate: "D", houseSeats: "115-108", senateSeats: "36-21" },
+    // 31st–33rd Congress: Democratic both
+    { start: "1849-03-04", end: "1855-12-03", house: "D", senate: "D", houseSeats: "140-88", senateSeats: "38-24" },
+    // 34th Congress: Republican emergence — R House, D Senate
+    { start: "1855-12-03", end: "1857-03-04", house: "R", senate: "D", houseSeats: "108-83", senateSeats: "40-15" },
+    // 35th Congress: Democratic both
+    { start: "1857-03-04", end: "1859-12-05", house: "D", senate: "D", houseSeats: "131-92", senateSeats: "36-20" },
+    // 36th Congress: Republican House, Democratic Senate
+    { start: "1859-12-05", end: "1861-03-04", house: "R", senate: "D", houseSeats: "116-83", senateSeats: "38-26" },
+    // 37th–43rd Congress: Republican dominance (Civil War & Reconstruction)
+    { start: "1861-03-04", end: "1875-12-06", house: "R", senate: "R", houseSeats: "136-55", senateSeats: "42-11" },
+    // 44th–45th Congress: Democratic House, Republican Senate
+    { start: "1875-12-06", end: "1879-12-01", house: "D", senate: "R", houseSeats: "167-123", senateSeats: "42-33" },
+    // 46th Congress: Democratic both
+    { start: "1879-12-01", end: "1881-03-04", house: "D", senate: "D", houseSeats: "149-130", senateSeats: "42-33" },
+    // 47th Congress: Republican (with narrow Senate)
+    { start: "1881-03-04", end: "1883-12-03", house: "R", senate: "R", houseSeats: "147-135", senateSeats: "37-37" },
+    // 48th–50th Congress: Democratic House, Republican Senate
+    { start: "1883-12-03", end: "1889-03-04", house: "D", senate: "R", houseSeats: "183-140", senateSeats: "39-37" },
+    // 51st Congress: Republican both
+    { start: "1889-03-04", end: "1891-12-07", house: "R", senate: "R", houseSeats: "166-159", senateSeats: "39-37" },
+    // 52nd Congress: Democratic House, Republican Senate
+    { start: "1891-12-07", end: "1893-03-04", house: "D", senate: "R", houseSeats: "235-88", senateSeats: "47-39" },
+    // 53rd Congress: Democratic both (Cleveland 2nd term)
+    { start: "1893-03-04", end: "1895-12-02", house: "D", senate: "D", houseSeats: "218-127", senateSeats: "44-38" },
+    // 54th–61st Congress: Republican era (McKinley through Taft)
+    { start: "1895-12-02", end: "1911-12-04", house: "R", senate: "R", houseSeats: "220-140", senateSeats: "54-32" },
+    // 62nd Congress: Democratic House, Republican Senate
+    { start: "1911-12-04", end: "1913-03-04", house: "D", senate: "R", houseSeats: "228-161", senateSeats: "51-41" },
+    // 63rd–65th Congress: Wilson Democratic era
+    { start: "1913-03-04", end: "1919-12-01", house: "D", senate: "D", houseSeats: "246-166", senateSeats: "53-42" },
+    // 66th–71st Congress: Republican era (Harding/Coolidge/Hoover)
+    { start: "1919-12-01", end: "1931-12-07", house: "R", senate: "R", houseSeats: "255-164", senateSeats: "54-42" },
+    // 72nd Congress: Democratic House, Republican Senate
+    { start: "1931-12-07", end: "1933-03-04", house: "D", senate: "R", houseSeats: "220-214", senateSeats: "48-47" },
+    // 73rd–79th Congress: FDR/Truman Democratic era (New Deal through WWII)
+    { start: "1933-03-04", end: "1947-01-03", house: "D", senate: "D", houseSeats: "263-155", senateSeats: "61-33" },
+    // 80th Congress: Republican both (Truman era)
+    { start: "1947-01-03", end: "1949-01-03", house: "R", senate: "R", houseSeats: "246-188", senateSeats: "51-45" },
+    // 81st–82nd Congress: Democratic return
+    { start: "1949-01-03", end: "1953-01-03", house: "D", senate: "D", houseSeats: "248-185", senateSeats: "51-44" },
+    // 83rd Congress: Eisenhower Republican
+    { start: "1953-01-03", end: "1955-01-03", house: "R", senate: "R", houseSeats: "221-212", senateSeats: "48-47" },
+    // 84th–94th Congress: Democratic era (Ike through Ford)
+    { start: "1955-01-03", end: "1977-01-03", house: "D", senate: "D", houseSeats: "263-172", senateSeats: "64-36" },
     { start: "1977-01-03", end: "1981-01-03", house: "D", senate: "D", houseSeats: "292-143", senateSeats: "61-38" },
     { start: "1981-01-03", end: "1987-01-03", house: "D", senate: "R", houseSeats: "242-192", senateSeats: "53-46" },
     { start: "1987-01-03", end: "1995-01-03", house: "D", senate: "D", houseSeats: "258-177", senateSeats: "57-43" },
@@ -991,6 +1261,36 @@ const CONGRESSIONAL_CONTROL = [
     startDate: new Date(period.start),
     endDate: new Date(period.end)
 }));
+
+// Merge consecutive same-senate-party runs into wider blocks
+const SENATE_CONTROL_PERIODS = (() => {
+    const merged = [];
+    for (const p of CONGRESSIONAL_CONTROL) {
+        const last = merged[merged.length - 1];
+        if (last && last.senate === p.senate) {
+            last.end = p.end;
+            last.endDate = p.endDate;
+        } else {
+            merged.push({ ...p });
+        }
+    }
+    return merged;
+})();
+
+// Merge consecutive same-house-party runs into wider blocks
+const HOUSE_CONTROL_PERIODS = (() => {
+    const merged = [];
+    for (const p of CONGRESSIONAL_CONTROL) {
+        const last = merged[merged.length - 1];
+        if (last && last.house === p.house) {
+            last.end = p.end;
+            last.endDate = p.endDate;
+        } else {
+            merged.push({ ...p });
+        }
+    }
+    return merged;
+})();
 
 const US_REGISTERED_VEHICLES = [
     { year: 2011, vehicles: 118455587 },
@@ -1059,6 +1359,8 @@ const NEWS_EVENTS = [
 const state = {
     allData: [],
     dowSeries: [],
+    oilPerGallonSeries: [],
+    brentPerGallonSeries: [],
     productionSeries: {
         usa: [],
         world: [],
@@ -1073,6 +1375,7 @@ const state = {
     productionChart: null,
     presidentBarChart: null,
     congressBarChart: null,
+    senateBarChart: null,
     slider: null,
     selectedStart: null,
     selectedEnd: null,
@@ -1082,10 +1385,13 @@ const state = {
     showCongressOverlay: false,
     showVehiclesOverlay: false,
     showDowOverlay: false,
+    showOilPerGallonOverlay: false,
+    showBrentPerGallonOverlay: false,
     showProductionOverlay: false,
     showNewsBubble: true,
     hoveredSeriesLabel: "",
     productionHoverIndex: null,
+    governanceHover: null,
     productionLegendDate: null,
     newsMatchMode: "exact",
     showDetailedDates: false,
@@ -1094,6 +1400,8 @@ const state = {
     newsRequestToken: 0,
     presidentTermAverages: [],
     congressPeriodAverages: [],
+    senateControlAverages: [],
+    houseControlAverages: [],
     blendBoundaries: {
         monthlyToWeekly: null,
         regularToTotal: null
@@ -1149,10 +1457,21 @@ const governanceOverlayPlugin = {
         const visibleMin = xScale.min;
         const visibleMax = xScale.max;
         const laneHeight = 24;
+        const hover = state.governanceHover;
 
         const intersects = (startMs, endMs) => endMs >= visibleMin && startMs <= visibleMax;
         const getLeft = (date) => Math.max(chartArea.left, xScale.getPixelForValue(date));
         const getRight = (date) => Math.min(chartArea.right, xScale.getPixelForValue(date));
+        const rangeMatchesHover = (office, startDate, endDate) => {
+            if (!hover || hover.office !== office) return false;
+            const hoverStart = new Date(hover.start).getTime();
+            const hoverEnd = new Date(hover.end).getTime();
+            const rangeStart = startDate.getTime();
+            const rangeEnd = endDate.getTime();
+            if (!Number.isFinite(hoverStart) || !Number.isFinite(hoverEnd)) return false;
+            if (office === "president") return hover.start === startDate.toISOString().slice(0, 10);
+            return rangeEnd > hoverStart && rangeStart < hoverEnd;
+        };
 
         ctx.save();
 
@@ -1167,11 +1486,23 @@ const governanceOverlayPlugin = {
                 const width = right - left;
                 if (width <= 2) return;
 
-                ctx.fillStyle = PARTY_COLORS[term.party] || PARTY_COLORS.OTHER;
+                const isMatch = rangeMatchesHover("president", term.startDate, term.endDate);
+                const isDimmed = hover && hover.office === "president" && !isMatch;
+                ctx.fillStyle = isDimmed
+                    ? setColorAlpha(PARTY_COLORS[term.party] || PARTY_COLORS.OTHER, 0.06)
+                    : isMatch
+                        ? setColorAlpha(PARTY_COLORS[term.party] || PARTY_COLORS.OTHER, 0.5)
+                        : PARTY_COLORS[term.party] || PARTY_COLORS.OTHER;
                 ctx.fillRect(left, chartArea.top, width, chartArea.bottom - chartArea.top);
 
+                if (isMatch) {
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(left, chartArea.top + 1, width, chartArea.bottom - chartArea.top - 2);
+                }
+
                 if (width > 70) {
-                    ctx.fillStyle = "rgba(237, 248, 244, 0.8)";
+                    ctx.fillStyle = isDimmed ? "rgba(237, 248, 244, 0.32)" : "rgba(237, 248, 244, 0.8)";
                     ctx.font = "600 11px 'IBM Plex Mono', monospace";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "top";
@@ -1198,17 +1529,31 @@ const governanceOverlayPlugin = {
 
                 const top = chartArea.bottom - laneHeight;
                 const half = Math.floor(laneHeight / 2);
-                ctx.fillStyle = PARTY_COLORS[period.house] || PARTY_COLORS.OTHER;
+                const senateMatch = rangeMatchesHover("senate", period.startDate, period.endDate);
+                const houseMatch = rangeMatchesHover("house", period.startDate, period.endDate);
+                const senateDimmed = hover && hover.office === "senate" && !senateMatch;
+                const houseDimmed = hover && hover.office === "house" && !houseMatch;
+
+                ctx.fillStyle = houseDimmed
+                    ? setColorAlpha(PARTY_COLORS[period.house] || PARTY_COLORS.OTHER, 0.06)
+                    : houseMatch
+                        ? setColorAlpha(PARTY_COLORS[period.house] || PARTY_COLORS.OTHER, 0.5)
+                        : PARTY_COLORS[period.house] || PARTY_COLORS.OTHER;
                 ctx.fillRect(left, top, width, half);
-                ctx.fillStyle = PARTY_COLORS[period.senate] || PARTY_COLORS.OTHER;
+                ctx.fillStyle = senateDimmed
+                    ? setColorAlpha(PARTY_COLORS[period.senate] || PARTY_COLORS.OTHER, 0.06)
+                    : senateMatch
+                        ? setColorAlpha(PARTY_COLORS[period.senate] || PARTY_COLORS.OTHER, 0.5)
+                        : PARTY_COLORS[period.senate] || PARTY_COLORS.OTHER;
                 ctx.fillRect(left, top + half, width, laneHeight - half);
 
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-                ctx.lineWidth = 1;
+                ctx.strokeStyle = senateMatch || houseMatch ? "rgba(255, 255, 255, 0.92)" : "rgba(255, 255, 255, 0.2)";
+                ctx.lineWidth = senateMatch || houseMatch ? 2 : 1;
                 ctx.strokeRect(left, top, width, laneHeight);
 
                 if (width > 95) {
-                    ctx.fillStyle = "rgba(237, 248, 244, 0.84)";
+                    const textDimmed = (hover && hover.office === "senate" && !senateMatch) || (hover && hover.office === "house" && !houseMatch);
+                    ctx.fillStyle = textDimmed ? "rgba(237, 248, 244, 0.32)" : "rgba(237, 248, 244, 0.84)";
                     ctx.font = "500 10px 'IBM Plex Mono', monospace";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
@@ -1263,6 +1608,62 @@ function formatDate(date) {
 function formatCompactDate(date) {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "--";
     return date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+}
+
+function formatTimeAxisTickLabel(value, mode, index = 0) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    if (mode === "month") {
+        const monthLabel = date.toLocaleDateString("en-US", { month: "short" });
+        return index === 0 || date.getMonth() === 0
+            ? `${monthLabel} ${String(date.getFullYear()).slice(-2)}`
+            : monthLabel;
+    }
+
+    if (mode === "halfyear") {
+        return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }
+
+    return String(date.getFullYear());
+}
+
+function getTimeAxisSettings(rangeStart, rangeEnd) {
+    const startMs = rangeStart instanceof Date ? rangeStart.getTime() : NaN;
+    const endMs = rangeEnd instanceof Date ? rangeEnd.getTime() : NaN;
+    const spanDays = Number.isFinite(startMs) && Number.isFinite(endMs)
+        ? Math.max(0, (endMs - startMs) / (24 * 60 * 60 * 1000))
+        : Number.POSITIVE_INFINITY;
+
+    if (state.showDetailedDates || spanDays <= 380) {
+        return { unit: "month", stepSize: 1, mode: "month", maxTicksLimit: 14 };
+    }
+
+    if (spanDays <= (365.25 * 5.25)) {
+        return { unit: "month", stepSize: 6, mode: "halfyear", maxTicksLimit: 12 };
+    }
+
+    return { unit: "year", stepSize: 1, mode: "year", maxTicksLimit: 12 };
+}
+
+function applyTimeAxisSettings(scaleOptions, settings, tickColor = "#9ab8af") {
+    if (!scaleOptions || !settings) return;
+
+    scaleOptions.time = {
+        ...(scaleOptions.time || {}),
+        unit: settings.unit
+    };
+
+    scaleOptions.ticks = {
+        ...(scaleOptions.ticks || {}),
+        color: tickColor,
+        autoSkip: true,
+        maxTicksLimit: settings.maxTicksLimit,
+        stepSize: settings.stepSize,
+        maxRotation: 0,
+        minRotation: 0,
+        callback: (value, index) => formatTimeAxisTickLabel(value, settings.mode, index)
+    };
 }
 
 function formatTbpd(value) {
@@ -1331,6 +1732,87 @@ function withAlpha(hexColor, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function setColorAlpha(color, alpha) {
+    const input = String(color || "").trim();
+    const rgbaMatch = input.match(/^rgba?\(([^)]+)\)$/i);
+    if (rgbaMatch) {
+        const parts = rgbaMatch[1].split(",").map((part) => part.trim());
+        if (parts.length >= 3) {
+            return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+        }
+    }
+    if (input.startsWith("#")) {
+        return withAlpha(input, alpha);
+    }
+    return color;
+}
+
+function setGovernanceHover(hoverState) {
+    const nextHover = hoverState && hoverState.office
+        ? {
+            office: hoverState.office,
+            start: hoverState.start || null,
+            end: hoverState.end || null,
+            label: hoverState.label || ""
+        }
+        : null;
+
+    const current = state.governanceHover;
+    const unchanged = (!current && !nextHover)
+        || (current && nextHover
+            && current.office === nextHover.office
+            && current.start === nextHover.start
+            && current.end === nextHover.end
+            && current.label === nextHover.label);
+    if (unchanged) return;
+
+    state.governanceHover = nextHover;
+    if (state.chart && (state.showPresidentialOverlay || state.showCongressOverlay)) {
+        state.chart.update("none");
+    }
+}
+
+function applyGovernanceChartHighlight(chart, activeIndex, labels, office) {
+    if (!chart) return;
+    const nextIndex = Number.isInteger(activeIndex) ? activeIndex : null;
+    if ((chart.$activeBarIndex ?? null) === nextIndex) return;
+
+    chart.$activeBarIndex = nextIndex;
+    const dataset = chart.data.datasets[0];
+    const baseColors = Array.isArray(dataset.baseBackgroundColor)
+        ? dataset.baseBackgroundColor
+        : (Array.isArray(dataset.backgroundColor) ? [...dataset.backgroundColor] : []);
+    dataset.baseBackgroundColor = baseColors;
+
+    if (nextIndex === null) {
+        dataset.backgroundColor = baseColors;
+        dataset.borderColor = "rgba(255,255,255,0.18)";
+        dataset.borderWidth = 1;
+        setGovernanceHover(null);
+        chart.update("none");
+        return;
+    }
+
+    dataset.backgroundColor = baseColors.map((color, index) => (
+        index === nextIndex ? setColorAlpha(color, 0.82) : setColorAlpha(color, 0.08)
+    ));
+    dataset.borderColor = baseColors.map((color, index) => (
+        index === nextIndex ? "rgba(255,255,255,0.92)" : setColorAlpha(color, 0.14)
+    ));
+    dataset.borderWidth = baseColors.map((_color, index) => (index === nextIndex ? 2 : 1));
+
+    const target = labels?.[nextIndex];
+    if (target) {
+        setGovernanceHover({
+            office,
+            start: target.start,
+            end: target.end,
+            label: target.label
+        });
+    }
+    chart.update("none");
+}
+
 function applyProductionHighlight(chart, activeIndex, forceUpdate = false) {
     if (!chart) return;
     const nextIndex = Number.isInteger(activeIndex) ? activeIndex : null;
@@ -1367,6 +1849,56 @@ function applyProductionHighlight(chart, activeIndex, forceUpdate = false) {
     chart.update("none");
 }
 
+function applyMainChartHighlight(chart, activeIndex, forceUpdate = false) {
+    if (!chart) return;
+    const nextIndex = Number.isInteger(activeIndex) ? activeIndex : null;
+    if (!forceUpdate && (chart.$activeDatasetIndex ?? null) === nextIndex) return;
+
+    chart.$activeDatasetIndex = nextIndex;
+
+    chart.data.datasets.forEach((dataset, index) => {
+        if (!("baseBorderColor" in dataset)) dataset.baseBorderColor = dataset.borderColor;
+        if (!("baseBorderWidth" in dataset)) dataset.baseBorderWidth = dataset.borderWidth;
+        if (!("basePointRadius" in dataset)) dataset.basePointRadius = dataset.pointRadius;
+        if (!("basePointHoverRadius" in dataset)) dataset.basePointHoverRadius = dataset.pointHoverRadius;
+        if (!("baseBackgroundColor" in dataset)) dataset.baseBackgroundColor = dataset.backgroundColor;
+
+        const baseBorderColor = dataset.baseBorderColor;
+        const baseBorderWidth = Number.isFinite(dataset.baseBorderWidth) ? dataset.baseBorderWidth : 2;
+        const basePointRadius = Number.isFinite(dataset.basePointRadius) ? dataset.basePointRadius : 0;
+        const basePointHoverRadius = Number.isFinite(dataset.basePointHoverRadius) ? dataset.basePointHoverRadius : 3;
+        const baseBackgroundColor = dataset.baseBackgroundColor;
+
+        if (nextIndex === null) {
+            dataset.borderColor = baseBorderColor;
+            dataset.borderWidth = baseBorderWidth;
+            dataset.pointRadius = basePointRadius;
+            dataset.pointHoverRadius = basePointHoverRadius;
+            dataset.backgroundColor = baseBackgroundColor;
+            return;
+        }
+
+        if (index === nextIndex) {
+            dataset.borderColor = baseBorderColor;
+            dataset.borderWidth = Math.max(baseBorderWidth, 2) + 1;
+            dataset.pointRadius = Math.max(basePointRadius, 1);
+            dataset.pointHoverRadius = Math.max(basePointHoverRadius, 3);
+            dataset.backgroundColor = baseBackgroundColor;
+            return;
+        }
+
+        dataset.borderColor = withAlpha(baseBorderColor, 0.22);
+        dataset.borderWidth = Math.max(1, baseBorderWidth - 1);
+        dataset.pointRadius = 0;
+        dataset.pointHoverRadius = 1;
+        if (typeof baseBackgroundColor === "string") {
+            dataset.backgroundColor = setColorAlpha(baseBackgroundColor, 0.05);
+        }
+    });
+
+    chart.update("none");
+}
+
 function getSeriesValueAtDate(points, targetDate) {
     if (!Array.isArray(points) || !points.length) return NaN;
     const targetMs = targetDate instanceof Date && !Number.isNaN(targetDate.getTime())
@@ -1391,6 +1923,26 @@ function getSeriesValueAtDate(points, targetDate) {
     return Number.isFinite(selected?.y) ? selected.y : NaN;
 }
 
+function getProducerRankingsForDate(datasets, targetDate) {
+    if (!Array.isArray(datasets) || !datasets.length) return new Map();
+
+    const ranked = datasets
+        .map((dataset, datasetIndex) => ({
+            datasetIndex,
+            value: getSeriesValueAtDate(dataset?.data, targetDate),
+            name: String(dataset?.producerName || dataset?.label || "")
+        }))
+        .sort((a, b) => {
+            const aFinite = Number.isFinite(a.value);
+            const bFinite = Number.isFinite(b.value);
+            if (aFinite && bFinite && a.value !== b.value) return b.value - a.value;
+            if (aFinite !== bFinite) return aFinite ? -1 : 1;
+            return a.name.localeCompare(b.name);
+        });
+
+    return new Map(ranked.map((item, index) => [item.datasetIndex, index + 1]));
+}
+
 function clampDateToRange(date, rangeStart, rangeEnd) {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
     const startMs = rangeStart instanceof Date ? rangeStart.getTime() : NaN;
@@ -1410,7 +1962,7 @@ function getProductionLegendReferenceDate(rangeStart, rangeEnd) {
 }
 
 function buildProductionMetaText(rangeStart, rangeEnd, legendReferenceDate) {
-    return `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Legend values reference ${formatDate(legendReferenceDate)}.`;
+    return `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Legend values and ranks reference ${formatDate(legendReferenceDate)}.`;
 }
 
 function setProductionLegendReferenceDate(date) {
@@ -1535,117 +2087,161 @@ function buildContextAverages() {
     state.presidentTermAverages = PRESIDENTIAL_TERMS.map((term) => ({
         name: term.name,
         start: term.start,
+        end: term.end,
         label: `${term.name} (${term.start.slice(0, 4)}-${term.end.slice(0, 4)})`,
         avg: averageForRange(term.startDate, term.endDate),
         party: term.party
     })).filter((item) => Number.isFinite(item.avg));
 
-    state.congressPeriodAverages = CONGRESSIONAL_CONTROL.map((period) => ({
+    state.senateControlAverages = SENATE_CONTROL_PERIODS.map((period) => ({
+        start: period.start,
+        end: period.end,
         label: `${period.start.slice(0, 4)}-${period.end.slice(0, 4)}`,
         avg: averageForRange(period.startDate, period.endDate),
-        house: period.house,
-        senate: period.senate,
-        houseSeats: period.houseSeats,
-        senateSeats: period.senateSeats
+        party: period.senate,
+        seats: period.senateSeats
     })).filter((item) => Number.isFinite(item.avg));
+
+    state.houseControlAverages = HOUSE_CONTROL_PERIODS.map((period) => ({
+        start: period.start,
+        end: period.end,
+        label: `${period.start.slice(0, 4)}-${period.end.slice(0, 4)}`,
+        avg: averageForRange(period.startDate, period.endDate),
+        party: period.house,
+        seats: period.houseSeats
+    })).filter((item) => Number.isFinite(item.avg));
+
+    // Keep legacy congressPeriodAverages for backward compat (unused but harmless)
+    state.congressPeriodAverages = state.houseControlAverages;
+}
+
+function makeBarChartOptions(rotationMin, rotationMax, titleTransform) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    title: titleTransform ? (items) => titleTransform(items[0].label) : undefined,
+                    label: (context) => `Avg: ${formatCurrency(context.parsed.y)}`
+                }
+            }
+        },
+        scales: {
+            x: { ticks: { color: "#9ab8af", maxRotation: rotationMax, minRotation: rotationMin } },
+            y: {
+                ticks: { color: "#9ab8af", callback: (value) => formatCurrency(Number(value)) },
+                grid: { color: "rgba(255,255,255,0.08)" }
+            }
+        }
+    };
 }
 
 function updateContextCharts() {
     const presidentCtx = document.getElementById("presidentBarChart")?.getContext("2d");
-    const congressCtx = document.getElementById("congressBarChart")?.getContext("2d");
-    if (!presidentCtx || !congressCtx) return;
+    const senateCtx = document.getElementById("senateBarChart")?.getContext("2d");
+    const houseCtx = document.getElementById("houseBarChart")?.getContext("2d");
+    if (!presidentCtx) return;
 
     const presidentLabels = state.presidentTermAverages.map((item) => item.label);
     const presidentValues = state.presidentTermAverages.map((item) => item.avg);
     const presidentColors = state.presidentTermAverages.map((item) => PARTY_COLORS[item.party] || PARTY_COLORS.OTHER);
+    const presidentPeriods = state.presidentTermAverages.map((item) => ({
+        label: item.label,
+        start: item.start,
+        end: item.end
+    }));
 
     if (state.presidentBarChart) {
         state.presidentBarChart.data.labels = presidentLabels;
         state.presidentBarChart.data.datasets[0].data = presidentValues;
         state.presidentBarChart.data.datasets[0].backgroundColor = presidentColors;
+        state.presidentBarChart.data.datasets[0].baseBackgroundColor = [...presidentColors];
         state.presidentBarChart.update("none");
     } else {
         state.presidentBarChart = new Chart(presidentCtx, {
             type: "bar",
-            data: {
-                labels: presidentLabels,
-                datasets: [{
-                    label: "Avg gas price",
-                    data: presidentValues,
-                    backgroundColor: presidentColors,
-                    borderColor: "rgba(255,255,255,0.18)",
-                    borderWidth: 1
-                }]
-            },
+            data: { labels: presidentLabels, datasets: [{ label: "Avg gas price", data: presidentValues, backgroundColor: presidentColors, borderColor: "rgba(255,255,255,0.18)", borderWidth: 1 }] },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `Avg: ${formatCurrency(context.parsed.y)}`
-                        }
-                    }
-                },
-                scales: {
-                    x: { ticks: { color: "#9ab8af", maxRotation: 60, minRotation: 30 } },
-                    y: {
-                        ticks: { color: "#9ab8af", callback: (value) => formatCurrency(Number(value)) },
-                        grid: { color: "rgba(255,255,255,0.08)" }
-                    }
+                ...makeBarChartOptions(30, 60, null),
+                interaction: { mode: "nearest", intersect: true },
+                onHover: (event, elements, chart) => {
+                    const activeIndex = elements?.length ? elements[0].index : null;
+                    chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
+                    applyGovernanceChartHighlight(chart, activeIndex, presidentPeriods, "president");
                 }
             }
         });
     }
+    applyGovernanceChartHighlight(state.presidentBarChart, state.presidentBarChart?.$activeBarIndex ?? null, presidentPeriods, "president");
 
-    const congressLabels = state.congressPeriodAverages.map((item) => `${item.label}\nH:${item.houseSeats} S:${item.senateSeats}`);
-    const congressValues = state.congressPeriodAverages.map((item) => item.avg);
-    const congressColors = state.congressPeriodAverages.map((item) => {
-        if (item.house === "T" || item.senate === "T") return PARTY_COLORS.T;
-        if (item.house === item.senate) return PARTY_COLORS[item.house] || PARTY_COLORS.OTHER;
-        return "rgba(180, 172, 255, 0.24)";
-    });
+    if (senateCtx) {
+        const senateLabels = state.senateControlAverages.map((item) => `${item.label}\nS:${item.seats}`);
+        const senateValues = state.senateControlAverages.map((item) => item.avg);
+        const senateColors = state.senateControlAverages.map((item) => item.party === "T" ? PARTY_COLORS.T : (PARTY_COLORS[item.party] || PARTY_COLORS.OTHER));
+        const senatePeriods = state.senateControlAverages.map((item) => ({
+            label: item.label,
+            start: item.start,
+            end: item.end
+        }));
 
-    if (state.congressBarChart) {
-        state.congressBarChart.data.labels = congressLabels;
-        state.congressBarChart.data.datasets[0].data = congressValues;
-        state.congressBarChart.data.datasets[0].backgroundColor = congressColors;
-        state.congressBarChart.update("none");
-    } else {
-        state.congressBarChart = new Chart(congressCtx, {
-            type: "bar",
-            data: {
-                labels: congressLabels,
-                datasets: [{
-                    label: "Avg gas price",
-                    data: congressValues,
-                    backgroundColor: congressColors,
-                    borderColor: "rgba(255,255,255,0.18)",
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: (items) => items[0].label.replace("\n", " "),
-                            label: (context) => `Avg: ${formatCurrency(context.parsed.y)}`
-                        }
-                    }
-                },
-                scales: {
-                    x: { ticks: { color: "#9ab8af", maxRotation: 75, minRotation: 50 } },
-                    y: {
-                        ticks: { color: "#9ab8af", callback: (value) => formatCurrency(Number(value)) },
-                        grid: { color: "rgba(255,255,255,0.08)" }
+        if (state.senateBarChart) {
+            state.senateBarChart.data.labels = senateLabels;
+            state.senateBarChart.data.datasets[0].data = senateValues;
+            state.senateBarChart.data.datasets[0].backgroundColor = senateColors;
+            state.senateBarChart.data.datasets[0].baseBackgroundColor = [...senateColors];
+            state.senateBarChart.update("none");
+        } else {
+            state.senateBarChart = new Chart(senateCtx, {
+                type: "bar",
+                data: { labels: senateLabels, datasets: [{ label: "Avg gas price", data: senateValues, backgroundColor: senateColors, borderColor: "rgba(255,255,255,0.18)", borderWidth: 1 }] },
+                options: {
+                    ...makeBarChartOptions(50, 75, (label) => label.replace("\n", " ")),
+                    interaction: { mode: "nearest", intersect: true },
+                    onHover: (event, elements, chart) => {
+                        const activeIndex = elements?.length ? elements[0].index : null;
+                        chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
+                        applyGovernanceChartHighlight(chart, activeIndex, senatePeriods, "senate");
                     }
                 }
-            }
-        });
+            });
+        }
+        applyGovernanceChartHighlight(state.senateBarChart, state.senateBarChart?.$activeBarIndex ?? null, senatePeriods, "senate");
+    }
+
+    if (houseCtx) {
+        const houseLabels = state.houseControlAverages.map((item) => `${item.label}\nH:${item.seats}`);
+        const houseValues = state.houseControlAverages.map((item) => item.avg);
+        const houseColors = state.houseControlAverages.map((item) => PARTY_COLORS[item.party] || PARTY_COLORS.OTHER);
+        const housePeriods = state.houseControlAverages.map((item) => ({
+            label: item.label,
+            start: item.start,
+            end: item.end
+        }));
+
+        if (state.congressBarChart) {
+            state.congressBarChart.data.labels = houseLabels;
+            state.congressBarChart.data.datasets[0].data = houseValues;
+            state.congressBarChart.data.datasets[0].backgroundColor = houseColors;
+            state.congressBarChart.data.datasets[0].baseBackgroundColor = [...houseColors];
+            state.congressBarChart.update("none");
+        } else {
+            state.congressBarChart = new Chart(houseCtx, {
+                type: "bar",
+                data: { labels: houseLabels, datasets: [{ label: "Avg gas price", data: houseValues, backgroundColor: houseColors, borderColor: "rgba(255,255,255,0.18)", borderWidth: 1 }] },
+                options: {
+                    ...makeBarChartOptions(50, 75, (label) => label.replace("\n", " ")),
+                    interaction: { mode: "nearest", intersect: true },
+                    onHover: (event, elements, chart) => {
+                        const activeIndex = elements?.length ? elements[0].index : null;
+                        chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
+                        applyGovernanceChartHighlight(chart, activeIndex, housePeriods, "house");
+                    }
+                }
+            });
+        }
+        applyGovernanceChartHighlight(state.congressBarChart, state.congressBarChart?.$activeBarIndex ?? null, housePeriods, "house");
     }
 }
 
@@ -1668,6 +2264,37 @@ function parseDowCsv(csvText) {
             t: new Date(`${year}-01-01`),
             y: bucket.sum / bucket.count,
             source: "fred-djia-annual-average"
+        }))
+        .sort((a, b) => a.t - b.t);
+}
+
+function parseOilPerGallonCsv(csvText, sourceLabel = "fred-oil-weekly-per-gallon") {
+    const lines = csvText.trim().split("\n").slice(1);
+    const weekly = new Map();
+
+    lines.forEach((line) => {
+        const [dateStr, valueStr] = line.split(",");
+        const pricePerBarrel = Number.parseFloat(valueStr);
+        const date = new Date(`${dateStr}T00:00:00Z`);
+        if (!Number.isFinite(pricePerBarrel) || Number.isNaN(date.getTime())) return;
+
+        const weekStart = new Date(date);
+        const dayOffset = (weekStart.getUTCDay() + 6) % 7;
+        weekStart.setUTCDate(weekStart.getUTCDate() - dayOffset);
+        weekStart.setUTCHours(0, 0, 0, 0);
+
+        const key = weekStart.toISOString().slice(0, 10);
+        const bucket = weekly.get(key) || { sum: 0, count: 0 };
+        bucket.sum += pricePerBarrel;
+        bucket.count += 1;
+        weekly.set(key, bucket);
+    });
+
+    return Array.from(weekly.entries())
+        .map(([weekStart, bucket]) => ({
+            t: new Date(`${weekStart}T00:00:00Z`),
+            y: (bucket.sum / bucket.count) / BARREL_GALLONS,
+            source: sourceLabel
         }))
         .sort((a, b) => a.t - b.t);
 }
@@ -1717,6 +2344,28 @@ async function fetchDowSeries() {
     }
 }
 
+async function fetchOilPerGallonSeries() {
+    try {
+        const response = await fetch("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO");
+        if (!response.ok) return [];
+        const text = await response.text();
+        return parseOilPerGallonCsv(text, "fred-wti-weekly-per-gallon");
+    } catch {
+        return [];
+    }
+}
+
+async function fetchBrentPerGallonSeries() {
+    try {
+        const response = await fetch("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU");
+        if (!response.ok) return [];
+        const text = await response.text();
+        return parseOilPerGallonCsv(text, "fred-brent-weekly-per-gallon");
+    } catch {
+        return [];
+    }
+}
+
 function toGdeltDateTime(date) {
     const y = date.getUTCFullYear();
     const m = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -1738,100 +2387,20 @@ async function fetchGdeltArticles(query, startDate, endDate, maxRecords = 12) {
 }
 
 function parseGdeltSeenDate(raw) {
-    if (!raw || raw.length < 8) return null;
-    const y = Number(raw.slice(0, 4));
-    const m = Number(raw.slice(4, 6));
-    const d = Number(raw.slice(6, 8));
-    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
-    return new Date(Date.UTC(y, m - 1, d));
-}
-
-async function fetchDateContextNews(selectedDate, dayWindow) {
-    const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
-    const cacheKey = `${dateKey}:${dayWindow}`;
-    if (state.newsCache[cacheKey]) return state.newsCache[cacheKey];
-
-    const start = new Date(selectedDate);
-    start.setDate(start.getDate() - dayWindow);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(selectedDate);
-    end.setDate(end.getDate() + dayWindow);
-    end.setHours(23, 59, 59, 999);
-
-    const worldQuery = '(geopolitics OR war OR conflict OR sanctions OR inflation OR recession OR "global economy")';
-    const oilQuery = '(oil OR crude OR gasoline OR petrol OR diesel OR OPEC OR refinery OR "energy prices")';
-
-    try {
-        const [worldRaw, oilRaw] = await Promise.all([
-            fetchGdeltArticles(worldQuery, start, end, 16),
-            fetchGdeltArticles(oilQuery, start, end, 16)
-        ]);
-
-        const normalize = (article) => {
-            const seen = parseGdeltSeenDate(article?.seendate || "");
-            const dateLabel = seen ? formatDate(seen) : "Unknown date";
-            return {
-                title: article?.title || "News item",
-                detail: article?.sourcecountry ? `Source country: ${article.sourcecountry}` : (article?.domain || "Related coverage"),
-                link: article?.url || "https://www.gdeltproject.org/",
-                dateLabel
-            };
-        };
-
-        const result = {
-            world: worldRaw.map(normalize).slice(0, 4),
-            oil: oilRaw.map(normalize).slice(0, 4)
-        };
-        state.newsCache[cacheKey] = result;
-        return result;
-    } catch {
-        const fallback = { world: [], oil: [] };
-        state.newsCache[cacheKey] = fallback;
-        return fallback;
+    if (!raw) return null;
+    const normalized = String(raw).trim();
+    if (/^\d{14}$/.test(normalized)) {
+        const year = Number.parseInt(normalized.slice(0, 4), 10);
+        const month = Number.parseInt(normalized.slice(4, 6), 10) - 1;
+        const day = Number.parseInt(normalized.slice(6, 8), 10);
+        const hour = Number.parseInt(normalized.slice(8, 10), 10);
+        const minute = Number.parseInt(normalized.slice(10, 12), 10);
+        const second = Number.parseInt(normalized.slice(12, 14), 10);
+        const parsed = new Date(Date.UTC(year, month, day, hour, minute, second));
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
     }
-}
-
-function buildCuratedDriverFallback(selectedDate, dayWindow) {
-    const selectedYear = selectedDate.getFullYear();
-    const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const yearWindow = dayWindow > 0 ? 2 : 1;
-    const hardMaxDays = yearWindow * 366;
-
-    const candidates = NEWS_EVENTS
-        .filter((event) => Math.abs(event.t.getFullYear() - selectedYear) <= yearWindow)
-        .map((event) => ({ ...event, diffDays: Math.abs(event.t.getTime() - selectedDate.getTime()) / DAY_MS }));
-
-    const matchedEvents = state.newsMatchMode === "window10"
-        ? candidates.filter((event) => event.diffDays <= 45)
-        : candidates.filter((event) => sameDay(event.t, selectedDate));
-
-    const ranked = (matchedEvents.length ? matchedEvents : candidates)
-        .filter((event) => event.diffDays <= hardMaxDays)
-        .sort((a, b) => a.diffDays - b.diffDays)
-        .slice(0, 8);
-
-    return {
-        world: ranked.filter((item) => item.category === "world").slice(0, 4).map((item) => ({
-            dateLabel: formatDate(item.t),
-            title: item.title,
-            detail: item.detail,
-            link: item.link
-        })),
-        oil: ranked.filter((item) => item.category === "oil").slice(0, 4).map((item) => ({
-            dateLabel: formatDate(item.t),
-            title: item.title,
-            detail: item.detail,
-            link: item.link
-        }))
-    };
-}
-
-function renderNewsListItems(items, emptyText) {
-    if (!items.length) return `<li>${emptyText}</li>`;
-    return items.map((item) =>
-        `<li><strong>${item.dateLabel || "Context"} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("");
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 async function updateNewsHeadlinesPanel(filtered) {
@@ -2020,6 +2589,7 @@ function updateProductionChart() {
 
     const rangeStart = state.selectedStart || state.allData[0]?.t;
     const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+    const timeAxisSettings = getTimeAxisSettings(rangeStart, rangeEnd);
     const legendReferenceDate = getProductionLegendReferenceDate(rangeStart, rangeEnd);
     const toFilteredSeries = (series) => buildAnnualOverlayPoints(series, rangeStart, rangeEnd);
 
@@ -2040,7 +2610,8 @@ function updateProductionChart() {
             const points = toFilteredSeries(producer.series);
             const baseColor = palette[index % palette.length];
             return {
-                label: `#${index + 1} ${producer.name}`,
+                label: producer.name,
+                producerName: producer.name,
                 data: points,
                 baseColor,
                 borderColor: baseColor,
@@ -2056,6 +2627,7 @@ function updateProductionChart() {
 
     if (state.productionChart) {
         state.productionChart.data.datasets = datasets;
+        applyTimeAxisSettings(state.productionChart.options.scales.x, timeAxisSettings);
         const activeIndex = Number.isInteger(state.productionHoverIndex) && state.productionHoverIndex < datasets.length
             ? state.productionHoverIndex
             : null;
@@ -2079,9 +2651,17 @@ function updateProductionChart() {
                 scales: {
                     x: {
                         type: "time",
-                        time: { unit: "year" },
+                        time: { unit: timeAxisSettings.unit },
                         grid: { color: "rgba(255,255,255,0.08)" },
-                        ticks: { color: "#9ab8af" }
+                        ticks: {
+                            color: "#9ab8af",
+                            autoSkip: true,
+                            maxTicksLimit: timeAxisSettings.maxTicksLimit,
+                            stepSize: timeAxisSettings.stepSize,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
+                        }
                     },
                     y: {
                         grid: { color: "rgba(255,255,255,0.08)" },
@@ -2116,13 +2696,18 @@ function updateProductionChart() {
                                 const currentRangeStart = state.selectedStart || state.allData[0]?.t;
                                 const currentRangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
                                 const currentLegendDate = getProductionLegendReferenceDate(currentRangeStart, currentRangeEnd);
+                                const rankByDatasetIndex = getProducerRankingsForDate(chart.data.datasets, currentLegendDate);
                                 return labels.map((item) => {
                                     const dataset = chart.data.datasets[item.datasetIndex] || {};
                                     const baseColor = dataset.baseColor || dataset.borderColor || item.strokeStyle;
                                     const isActive = Number.isInteger(activeIndex) && activeIndex === item.datasetIndex;
                                     const pointValue = getSeriesValueAtDate(dataset.data, currentLegendDate);
                                     const valueText = Number.isFinite(pointValue) ? formatTbpd(pointValue) : "--";
-                                    const legendText = `${dataset.label} - ${valueText}`;
+                                    const rankText = rankByDatasetIndex.has(item.datasetIndex)
+                                        ? `#${rankByDatasetIndex.get(item.datasetIndex)}`
+                                        : "#--";
+                                    const producerName = dataset.producerName || dataset.label || "Producer";
+                                    const legendText = `${rankText} ${producerName} - ${valueText}`;
 
                                     if (isActive) {
                                         return {
@@ -2143,6 +2728,10 @@ function updateProductionChart() {
                                         lineWidth: 1,
                                         pointStyle: "circle"
                                     };
+                                }).sort((a, b) => {
+                                    const rankA = rankByDatasetIndex.get(a.datasetIndex) ?? Number.MAX_SAFE_INTEGER;
+                                    const rankB = rankByDatasetIndex.get(b.datasetIndex) ?? Number.MAX_SAFE_INTEGER;
+                                    return rankA - rankB;
                                 });
                             }
                         }
@@ -2164,7 +2753,7 @@ function updateProductionChart() {
 function updateChart() {
     const filtered = getFilteredData();
     if (!filtered.length) return;
-    const xTimeUnit = state.showDetailedDates ? "month" : "year";
+    const timeAxisSettings = getTimeAxisSettings(filtered[0].t, filtered[filtered.length - 1].t);
 
     updateSummary(filtered);
     buildFactCards(filtered);
@@ -2228,6 +2817,42 @@ function updateChart() {
                 tension: 0.16,
                 fill: false,
                 yAxisID: "y2"
+            });
+        }
+    }
+
+    if (state.showOilPerGallonOverlay) {
+        const oilPerGallonPoints = buildAnnualOverlayPoints(state.oilPerGallonSeries, filtered[0].t, filtered[filtered.length - 1].t);
+
+        if (oilPerGallonPoints.length) {
+            datasets.push({
+                label: "WTI crude / 42",
+                data: oilPerGallonPoints,
+                borderColor: "#ff8f5a",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.12,
+                borderDash: [5, 4],
+                fill: false
+            });
+        }
+    }
+
+    if (state.showBrentPerGallonOverlay) {
+        const brentPerGallonPoints = buildAnnualOverlayPoints(state.brentPerGallonSeries, filtered[0].t, filtered[filtered.length - 1].t);
+
+        if (brentPerGallonPoints.length) {
+            datasets.push({
+                label: "Brent crude / 42",
+                data: brentPerGallonPoints,
+                borderColor: "#c28bff",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.12,
+                borderDash: [2, 6],
+                fill: false
             });
         }
     }
@@ -2349,8 +2974,11 @@ function updateChart() {
         state.chart.data.datasets = datasets;
         state.chart.options.scales.x.min = minDate;
         state.chart.options.scales.x.max = maxDate;
-        state.chart.options.scales.x.time.unit = xTimeUnit;
-        state.chart.update("none");
+        applyTimeAxisSettings(state.chart.options.scales.x, timeAxisSettings);
+        const activeIndex = Number.isInteger(state.chart.$activeDatasetIndex) && state.chart.$activeDatasetIndex < datasets.length
+            ? state.chart.$activeDatasetIndex
+            : null;
+        applyMainChartHighlight(state.chart, activeIndex, true);
     } else {
         const ctx = document.getElementById("mainChart").getContext("2d");
         const gradient = ctx.createLinearGradient(0, 0, 0, 420);
@@ -2383,9 +3011,7 @@ function updateChart() {
                     updateChart();
                 },
                 onHover: (event, elements, chart) => {
-                    const resolved = (elements && elements.length)
-                        ? elements
-                        : chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+                    const resolved = chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
 
                     const xScale = chart?.scales?.x;
                     const area = chart?.chartArea;
@@ -2399,21 +3025,31 @@ function updateChart() {
                     if (!resolved || !resolved.length) {
                         chart.canvas.style.cursor = "default";
                         setHoveredSeriesStatus("");
+                        applyMainChartHighlight(chart, null);
                         return;
                     }
                     const first = resolved[0];
                     const label = chart?.data?.datasets?.[first.datasetIndex]?.label || "";
                     chart.canvas.style.cursor = label ? "pointer" : "default";
                     setHoveredSeriesStatus(label);
+                    applyMainChartHighlight(chart, first.datasetIndex);
                 },
                 scales: {
                     x: {
                         type: "time",
                         min: minDate,
                         max: maxDate,
-                        time: { unit: xTimeUnit },
+                        time: { unit: timeAxisSettings.unit },
                         grid: { color: "rgba(255,255,255,0.08)" },
-                        ticks: { color: "#9ab8af" }
+                        ticks: {
+                            color: "#9ab8af",
+                            autoSkip: true,
+                            maxTicksLimit: timeAxisSettings.maxTicksLimit,
+                            stepSize: timeAxisSettings.stepSize,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
+                        }
                     },
                     y: {
                         grid: { color: "rgba(255,255,255,0.08)" },
@@ -2449,11 +3085,52 @@ function updateChart() {
                 },
                 plugins: {
                     legend: {
+                        onHover: (_event, legendItem, legend) => {
+                            const chart = legend?.chart;
+                            if (!chart) return;
+                            chart.canvas.style.cursor = "pointer";
+                            const label = chart?.data?.datasets?.[legendItem.datasetIndex]?.label || "";
+                            setHoveredSeriesStatus(label);
+                            applyMainChartHighlight(chart, legendItem.datasetIndex);
+                        },
+                        onLeave: (_event, legend) => {
+                            const chart = legend?.chart;
+                            if (!chart) return;
+                            chart.canvas.style.cursor = "default";
+                            setHoveredSeriesStatus("");
+                            applyMainChartHighlight(chart, null);
+                        },
                         labels: {
                             color: "#edf8f4",
                             usePointStyle: true,
                             boxWidth: 8,
-                            boxHeight: 8
+                            boxHeight: 8,
+                            generateLabels: (chart) => {
+                                const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                const activeIndex = chart.$activeDatasetIndex;
+                                return labels.map((item) => {
+                                    const dataset = chart.data.datasets[item.datasetIndex] || {};
+                                    const baseColor = dataset.baseBorderColor || dataset.borderColor || item.strokeStyle;
+                                    const isActive = Number.isInteger(activeIndex) && activeIndex === item.datasetIndex;
+
+                                    if (isActive) {
+                                        return {
+                                            ...item,
+                                            fillStyle: "#ffffff",
+                                            strokeStyle: baseColor,
+                                            lineWidth: 3,
+                                            pointStyle: "circle"
+                                        };
+                                    }
+
+                                    return {
+                                        ...item,
+                                        fillStyle: baseColor,
+                                        strokeStyle: baseColor,
+                                        lineWidth: 1
+                                    };
+                                });
+                            }
                         }
                     },
                     tooltip: {
@@ -2473,6 +3150,12 @@ function updateChart() {
                                 if (context.dataset.label === "DOW annual average") {
                                     return `${context.dataset.label}: ${Math.round(context.parsed.y).toLocaleString()}`;
                                 }
+                                if (context.dataset.label === "WTI crude / 42") {
+                                    return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                                }
+                                if (context.dataset.label === "Brent crude / 42") {
+                                    return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                                }
                                 const productionLabels = ["World crude production", "OPEC crude production", "U.S. crude production", "Saudi Arabia crude production", "Russia crude production", "Canada crude production", "UAE crude production"];
                                 if (productionLabels.includes(context.dataset.label)) {
                                     return `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`;
@@ -2489,6 +3172,12 @@ function updateChart() {
                                     return source === "dow-fallback-annual-average"
                                         ? "DOW annual average (fallback series)"
                                         : "FRED DJIA annual average";
+                                }
+                                if (items?.[0]?.dataset?.label === "WTI crude / 42") {
+                                    return "FRED WTI spot price, averaged to weekly and divided by 42 gallons per barrel";
+                                }
+                                if (items?.[0]?.dataset?.label === "Brent crude / 42") {
+                                    return "FRED Brent spot price, averaged to weekly and divided by 42 gallons per barrel";
                                 }
                                 const productionLabels = ["World crude production", "OPEC crude production", "U.S. crude production", "Saudi Arabia crude production", "Russia crude production", "Canada crude production", "UAE crude production"];
                                 if (productionLabels.includes(items?.[0]?.dataset?.label)) {
@@ -2519,6 +3208,18 @@ function updateChart() {
     }
     if (state.showDowOverlay) {
         narrativeParts.push("DOW annual-average overlay is active for market context.");
+    } else {
+        narrativeParts.push("Use the DOW overlay for market context.");
+    }
+    if (state.showOilPerGallonOverlay) {
+        narrativeParts.push("WTI crude per-gallon equivalent is active (weekly WTI spot average divided by 42 gallons per barrel).");
+    } else {
+        narrativeParts.push("Use the WTI crude ÷ 42 overlay to compare pump prices with a rough raw-barrel per-gallon baseline.");
+    }
+    if (state.showBrentPerGallonOverlay) {
+        narrativeParts.push("Brent crude per-gallon equivalent is active (weekly Brent spot average divided by 42 gallons per barrel).");
+    } else {
+        narrativeParts.push("Use the Brent crude ÷ 42 overlay to compare international benchmark crude against pump prices.");
     }
     if (state.showProductionOverlay) {
         narrativeParts.push("Oil production overlays are active (World, OPEC, U.S., Saudi Arabia, Russia, Canada, and U.A.E. annual TBPD).");
@@ -2662,11 +3363,13 @@ async function fetchData() {
     const legacyMonthlyUrl = `https://api.eia.gov/v2/petroleum/pri/allmg/data/?api_key=${API_KEY}&frequency=monthly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPM0&facets[process][]=PTA&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
 
     try {
-        const [totalResponse, regularResponse, legacyResponse, dowSeries, productionSeries] = await Promise.all([
+        const [totalResponse, regularResponse, legacyResponse, dowSeries, oilPerGallonSeries, brentPerGallonSeries, productionSeries] = await Promise.all([
             fetch(totalGasWeeklyUrl),
             fetch(regularGasWeeklyUrl),
             fetch(legacyMonthlyUrl),
             fetchDowSeries(),
+            fetchOilPerGallonSeries(),
+            fetchBrentPerGallonSeries(),
             fetchProductionSeries()
         ]);
 
@@ -2689,6 +3392,8 @@ async function fetchData() {
         const legacyMonthly = normalizeSeriesRows(legacyRows, "monthly-total-pta");
         state.allData = buildBlendedSeries(totalWeekly, regularWeekly, legacyMonthly);
         state.dowSeries = Array.isArray(dowSeries) ? dowSeries : [];
+        state.oilPerGallonSeries = Array.isArray(oilPerGallonSeries) ? oilPerGallonSeries : [];
+        state.brentPerGallonSeries = Array.isArray(brentPerGallonSeries) ? brentPerGallonSeries : [];
         state.productionSeries = productionSeries && typeof productionSeries === "object"
             ? productionSeries
             : { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [], topProducersContext: [] };
@@ -2743,6 +3448,14 @@ function wireInteractions() {
     });
     document.getElementById("dowToggle").addEventListener("change", (event) => {
         state.showDowOverlay = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("oilPerGallonToggle").addEventListener("change", (event) => {
+        state.showOilPerGallonOverlay = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("brentPerGallonToggle").addEventListener("change", (event) => {
+        state.showBrentPerGallonOverlay = event.target.checked;
         updateChart();
     });
     document.getElementById("productionToggle").addEventListener("change", (event) => {
@@ -2823,6 +3536,8 @@ function wireInteractions() {
 
     state.showNewsBubble = document.getElementById("newsToggle").checked;
     state.showDetailedDates = document.getElementById("dateAxisToggle").checked;
+    state.showOilPerGallonOverlay = document.getElementById("oilPerGallonToggle").checked;
+    state.showBrentPerGallonOverlay = document.getElementById("brentPerGallonToggle").checked;
     state.showProductionOverlay = document.getElementById("productionToggle").checked;
 }
 

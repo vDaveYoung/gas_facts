@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Political History — Gas Facts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #0f1a16;
+    --surface: #162019;
+    --surface2: #1c2920;
+    --border: rgba(255,255,255,0.09);
+    --text: #edf8f4;
+    --muted: #9ab8af;
+    --accent: #4bdc96;
+    --d-color: #4b8cff;
+    --r-color: #f16565;
+    --other-color: #a6b8af;
+    --t-color: #9d5dff;
+    --row-h: 52px;
+    --axis-h: 32px;
+    --label-w: 80px;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    padding: 24px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+header .back-link {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-family: 'IBM Plex Mono', monospace;
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 20px;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+header .back-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.controls {
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.preset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.preset-btn:hover, .preset-btn.active {
+    background: rgba(75, 220, 150, 0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.year-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.year-inputs label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.year-inputs input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    width: 70px;
+    text-align: center;
+}
+
+.year-inputs input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.legend {
+    padding: 10px 32px 10px calc(var(--label-w) + 32px);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.timeline-outer {
+    padding: 20px 32px 32px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.timeline-wrap {
+    display: flex;
+    align-items: stretch;
+    min-width: 900px;
+}
+
+.track-labels {
+    width: var(--label-w);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0;
+}
+
+.track-label {
+    height: var(--row-h);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(154, 184, 175, 0.55);
+    font-family: 'IBM Plex Mono', monospace;
+    border-bottom: 1px solid var(--border);
+}
+
+.track-label:last-child {
+    border-bottom: none;
+}
+
+.canvas-wrap {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+canvas#timeline {
+    display: block;
+    width: 100%;
+    cursor: crosshair;
+}
+
+.tooltip-box {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    z-index: 100;
+    max-width: 260px;
+    line-height: 1.5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.tooltip-box.visible {
+    opacity: 1;
+}
+
+.tooltip-party {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.tooltip-title {
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.tooltip-sub {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.era-note {
+    padding: 10px 32px 4px calc(var(--label-w) + 32px);
+    font-size: 0.72rem;
+    color: rgba(154, 184, 175, 0.4);
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>US Political History</h1>
+    <a class="back-link" href="index.html">← Gas Facts</a>
+</header>
+
+<div class="controls">
+    <span style="font-size:0.78rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-weight:600;">RANGE</span>
+    <button class="preset-btn" data-start="1776" data-end="2029">All History</button>
+    <button class="preset-btn" data-start="1789" data-end="1865">Founding Era</button>
+    <button class="preset-btn" data-start="1861" data-end="1932">Gilded Age</button>
+    <button class="preset-btn" data-start="1933" data-end="1980">New Deal Era</button>
+    <button class="preset-btn active" data-start="1945" data-end="2029">Modern Era</button>
+    <button class="preset-btn" data-start="1983" data-end="2029">Gas Data Era</button>
+    <div class="year-inputs">
+        <label for="startYearInput">From</label>
+        <input type="number" id="startYearInput" value="1945" min="1776" max="2028" step="1">
+        <label for="endYearInput">to</label>
+        <input type="number" id="endYearInput" value="2029" min="1777" max="2029" step="1">
+    </div>
+</div>
+
+<div class="era-note" id="eraNoteText">Hover over a block to see details. Gas price data starts in 1983.</div>
+
+<div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:rgba(75,140,255,0.65);"></div>Democratic</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:rgba(241,101,101,0.65);"></div>Republican</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:rgba(157,93,255,0.65);"></div>Tie / Split</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:rgba(166,184,175,0.5);"></div>Other / Pre-party</div>
+</div>
+
+<div class="timeline-outer">
+    <div class="timeline-wrap">
+        <div class="track-labels">
+            <div class="track-label">President</div>
+            <div class="track-label">Senate</div>
+            <div class="track-label">House</div>
+            <div class="track-label" style="height:var(--axis-h); border-top:1px solid var(--border);">&nbsp;</div>
+        </div>
+        <div class="canvas-wrap">
+            <canvas id="timeline"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="tooltip-box" id="tooltip"></div>
+
+<script>
+// ── Party Colors ────────────────────────────────────────────────────────────
+const PARTY_COLORS_SOLID = {
+    D: "rgba(75,140,255,0.72)",
+    R: "rgba(241,101,101,0.72)",
+    T: "rgba(157,93,255,0.72)",
+    OTHER: "rgba(166,184,175,0.48)"
+};
+
+const PARTY_COLORS_DIM = {
+    D: "rgba(75,140,255,0.28)",
+    R: "rgba(241,101,101,0.28)",
+    T: "rgba(157,93,255,0.28)",
+    OTHER: "rgba(166,184,175,0.18)"
+};
+
+const PARTY_LABELS = { D: "Democratic", R: "Republican", T: "Tie / Split", OTHER: "Other / Pre-party" };
+
+// ── Presidential Terms ──────────────────────────────────────────────────────
+const PRESIDENTIAL_TERMS = [
+    { start: "1776-07-04", end: "1777-10-29", name: "John Hancock (Pres. of Congress)", party: "OTHER" },
+    { start: "1777-11-01", end: "1778-12-09", name: "Henry Laurens (Pres. of Congress)", party: "OTHER" },
+    { start: "1778-12-10", end: "1779-09-27", name: "John Jay (Pres. of Congress)", party: "OTHER" },
+    { start: "1779-09-28", end: "1781-07-10", name: "Samuel Huntington (Pres. of Congress)", party: "OTHER" },
+    { start: "1781-07-10", end: "1781-11-05", name: "Thomas McKean (Pres. of Congress)", party: "OTHER" },
+    { start: "1781-11-05", end: "1782-11-04", name: "John Hanson (Pres. under Articles)", party: "OTHER" },
+    { start: "1782-11-04", end: "1783-12-13", name: "Elias Boudinot (Pres. under Articles)", party: "OTHER" },
+    { start: "1783-12-13", end: "1784-06-03", name: "Thomas Mifflin (Pres. under Articles)", party: "OTHER" },
+    { start: "1784-11-30", end: "1785-11-23", name: "Richard Henry Lee (Pres. under Articles)", party: "OTHER" },
+    { start: "1785-11-23", end: "1786-06-05", name: "John Hancock (Pres. under Articles)", party: "OTHER" },
+    { start: "1786-06-06", end: "1787-02-01", name: "Nathaniel Gorham (Pres. under Articles)", party: "OTHER" },
+    { start: "1787-02-02", end: "1787-10-29", name: "Arthur St. Clair (Pres. under Articles)", party: "OTHER" },
+    { start: "1788-01-22", end: "1789-04-30", name: "Cyrus Griffin (Pres. under Articles)", party: "OTHER" },
+    { start: "1789-04-30", end: "1797-03-04", name: "George Washington", party: "OTHER" },
+    { start: "1797-03-04", end: "1801-03-04", name: "John Adams", party: "OTHER" },
+    { start: "1801-03-04", end: "1809-03-04", name: "Thomas Jefferson", party: "OTHER" },
+    { start: "1809-03-04", end: "1817-03-04", name: "James Madison", party: "OTHER" },
+    { start: "1817-03-04", end: "1825-03-04", name: "James Monroe", party: "OTHER" },
+    { start: "1825-03-04", end: "1829-03-04", name: "John Quincy Adams", party: "OTHER" },
+    { start: "1829-03-04", end: "1837-03-04", name: "Andrew Jackson", party: "D" },
+    { start: "1837-03-04", end: "1841-03-04", name: "Martin Van Buren", party: "D" },
+    { start: "1841-03-04", end: "1841-04-04", name: "William H. Harrison", party: "OTHER" },
+    { start: "1841-04-04", end: "1845-03-04", name: "John Tyler", party: "OTHER" },
+    { start: "1845-03-04", end: "1849-03-04", name: "James K. Polk", party: "D" },
+    { start: "1849-03-04", end: "1850-07-09", name: "Zachary Taylor", party: "OTHER" },
+    { start: "1850-07-09", end: "1853-03-04", name: "Millard Fillmore", party: "OTHER" },
+    { start: "1853-03-04", end: "1857-03-04", name: "Franklin Pierce", party: "D" },
+    { start: "1857-03-04", end: "1861-03-04", name: "James Buchanan", party: "D" },
+    { start: "1861-03-04", end: "1865-04-15", name: "Abraham Lincoln", party: "R" },
+    { start: "1865-04-15", end: "1869-03-04", name: "Andrew Johnson", party: "OTHER" },
+    { start: "1869-03-04", end: "1877-03-04", name: "Ulysses S. Grant", party: "R" },
+    { start: "1877-03-04", end: "1881-03-04", name: "Rutherford B. Hayes", party: "R" },
+    { start: "1881-03-04", end: "1881-09-19", name: "James A. Garfield", party: "R" },
+    { start: "1881-09-19", end: "1885-03-04", name: "Chester A. Arthur", party: "R" },
+    { start: "1885-03-04", end: "1889-03-04", name: "Grover Cleveland", party: "D" },
+    { start: "1889-03-04", end: "1893-03-04", name: "Benjamin Harrison", party: "R" },
+    { start: "1893-03-04", end: "1897-03-04", name: "Grover Cleveland", party: "D" },
+    { start: "1897-03-04", end: "1901-09-14", name: "William McKinley", party: "R" },
+    { start: "1901-09-14", end: "1909-03-04", name: "Theodore Roosevelt", party: "R" },
+    { start: "1909-03-04", end: "1913-03-04", name: "William H. Taft", party: "R" },
+    { start: "1913-03-04", end: "1921-03-04", name: "Woodrow Wilson", party: "D" },
+    { start: "1921-03-04", end: "1923-08-02", name: "Warren G. Harding", party: "R" },
+    { start: "1923-08-02", end: "1929-03-04", name: "Calvin Coolidge", party: "R" },
+    { start: "1929-03-04", end: "1933-03-04", name: "Herbert Hoover", party: "R" },
+    { start: "1933-03-04", end: "1945-04-12", name: "Franklin D. Roosevelt", party: "D" },
+    { start: "1945-04-12", end: "1953-01-20", name: "Harry S. Truman", party: "D" },
+    { start: "1953-01-20", end: "1961-01-20", name: "Dwight D. Eisenhower", party: "R" },
+    { start: "1961-01-20", end: "1963-11-22", name: "John F. Kennedy", party: "D" },
+    { start: "1963-11-22", end: "1969-01-20", name: "Lyndon B. Johnson", party: "D" },
+    { start: "1969-01-20", end: "1974-08-09", name: "Richard Nixon", party: "R" },
+    { start: "1974-08-09", end: "1977-01-20", name: "Gerald Ford", party: "R" },
+    { start: "1977-01-20", end: "1981-01-20", name: "Jimmy Carter", party: "D" },
+    { start: "1981-01-20", end: "1989-01-20", name: "Ronald Reagan", party: "R" },
+    { start: "1989-01-20", end: "1993-01-20", name: "George H.W. Bush", party: "R" },
+    { start: "1993-01-20", end: "2001-01-20", name: "Bill Clinton", party: "D" },
+    { start: "2001-01-20", end: "2009-01-20", name: "George W. Bush", party: "R" },
+    { start: "2009-01-20", end: "2017-01-20", name: "Barack Obama", party: "D" },
+    { start: "2017-01-20", end: "2021-01-20", name: "Donald Trump", party: "R" },
+    { start: "2021-01-20", end: "2025-01-20", name: "Joe Biden", party: "D" },
+    { start: "2025-01-20", end: "2029-01-20", name: "Donald Trump", party: "R" }
+].map((t) => ({ ...t, startMs: new Date(t.start).getTime(), endMs: new Date(t.end).getTime() }));
+
+// ── Congressional Control ────────────────────────────────────────────────────
+const CONGRESSIONAL_CONTROL = [
+    { start: "1776-07-04", end: "1781-03-01", house: "OTHER", senate: "OTHER", houseSeats: "—", senateSeats: "—" },
+    { start: "1781-03-01", end: "1789-03-04", house: "OTHER", senate: "OTHER", houseSeats: "—", senateSeats: "—" },
+    { start: "1789-03-04", end: "1793-03-04", house: "OTHER", senate: "OTHER", houseSeats: "38-26", senateSeats: "18-8" },
+    { start: "1793-03-04", end: "1795-12-07", house: "OTHER", senate: "OTHER", houseSeats: "57-48", senateSeats: "16-13" },
+    { start: "1795-12-07", end: "1801-03-04", house: "OTHER", senate: "OTHER", houseSeats: "58-48", senateSeats: "20-12" },
+    { start: "1801-03-04", end: "1827-12-05", house: "OTHER", senate: "OTHER", houseSeats: "144-36", senateSeats: "34-10" },
+    { start: "1827-12-05", end: "1829-03-04", house: "D", senate: "D", houseSeats: "119-94", senateSeats: "28-20" },
+    { start: "1829-03-04", end: "1841-03-04", house: "D", senate: "D", houseSeats: "139-74", senateSeats: "26-22" },
+    { start: "1841-03-04", end: "1843-12-04", house: "OTHER", senate: "OTHER", houseSeats: "133-102", senateSeats: "28-22" },
+    { start: "1843-12-04", end: "1845-03-04", house: "D", senate: "OTHER", houseSeats: "142-79", senateSeats: "28-25" },
+    { start: "1845-03-04", end: "1847-12-06", house: "D", senate: "D", houseSeats: "143-77", senateSeats: "34-22" },
+    { start: "1847-12-06", end: "1849-03-04", house: "OTHER", senate: "D", houseSeats: "115-108", senateSeats: "36-21" },
+    { start: "1849-03-04", end: "1855-12-03", house: "D", senate: "D", houseSeats: "140-88", senateSeats: "38-24" },
+    { start: "1855-12-03", end: "1857-03-04", house: "R", senate: "D", houseSeats: "108-83", senateSeats: "40-15" },
+    { start: "1857-03-04", end: "1859-12-05", house: "D", senate: "D", houseSeats: "131-92", senateSeats: "36-20" },
+    { start: "1859-12-05", end: "1861-03-04", house: "R", senate: "D", houseSeats: "116-83", senateSeats: "38-26" },
+    { start: "1861-03-04", end: "1875-12-06", house: "R", senate: "R", houseSeats: "136-55", senateSeats: "42-11" },
+    { start: "1875-12-06", end: "1879-12-01", house: "D", senate: "R", houseSeats: "167-123", senateSeats: "42-33" },
+    { start: "1879-12-01", end: "1881-03-04", house: "D", senate: "D", houseSeats: "149-130", senateSeats: "42-33" },
+    { start: "1881-03-04", end: "1883-12-03", house: "R", senate: "R", houseSeats: "147-135", senateSeats: "37-37" },
+    { start: "1883-12-03", end: "1889-03-04", house: "D", senate: "R", houseSeats: "183-140", senateSeats: "39-37" },
+    { start: "1889-03-04", end: "1891-12-07", house: "R", senate: "R", houseSeats: "166-159", senateSeats: "39-37" },
+    { start: "1891-12-07", end: "1893-03-04", house: "D", senate: "R", houseSeats: "235-88", senateSeats: "47-39" },
+    { start: "1893-03-04", end: "1895-12-02", house: "D", senate: "D", houseSeats: "218-127", senateSeats: "44-38" },
+    { start: "1895-12-02", end: "1911-12-04", house: "R", senate: "R", houseSeats: "220-140", senateSeats: "54-32" },
+    { start: "1911-12-04", end: "1913-03-04", house: "D", senate: "R", houseSeats: "228-161", senateSeats: "51-41" },
+    { start: "1913-03-04", end: "1919-12-01", house: "D", senate: "D", houseSeats: "246-166", senateSeats: "53-42" },
+    { start: "1919-12-01", end: "1931-12-07", house: "R", senate: "R", houseSeats: "255-164", senateSeats: "54-42" },
+    { start: "1931-12-07", end: "1933-03-04", house: "D", senate: "R", houseSeats: "220-214", senateSeats: "48-47" },
+    { start: "1933-03-04", end: "1947-01-03", house: "D", senate: "D", houseSeats: "263-155", senateSeats: "61-33" },
+    { start: "1947-01-03", end: "1949-01-03", house: "R", senate: "R", houseSeats: "246-188", senateSeats: "51-45" },
+    { start: "1949-01-03", end: "1953-01-03", house: "D", senate: "D", houseSeats: "248-185", senateSeats: "51-44" },
+    { start: "1953-01-03", end: "1955-01-03", house: "R", senate: "R", houseSeats: "221-212", senateSeats: "48-47" },
+    { start: "1955-01-03", end: "1977-01-03", house: "D", senate: "D", houseSeats: "263-172", senateSeats: "64-36" },
+    { start: "1977-01-03", end: "1981-01-03", house: "D", senate: "D", houseSeats: "292-143", senateSeats: "61-38" },
+    { start: "1981-01-03", end: "1987-01-03", house: "D", senate: "R", houseSeats: "242-192", senateSeats: "53-46" },
+    { start: "1987-01-03", end: "1995-01-03", house: "D", senate: "D", houseSeats: "258-177", senateSeats: "57-43" },
+    { start: "1995-01-03", end: "2001-01-03", house: "R", senate: "R", houseSeats: "230-205", senateSeats: "55-45" },
+    { start: "2001-01-03", end: "2001-06-06", house: "R", senate: "R", houseSeats: "221-212", senateSeats: "50-50" },
+    { start: "2001-06-06", end: "2003-01-03", house: "R", senate: "D", houseSeats: "221-212", senateSeats: "49-50" },
+    { start: "2003-01-03", end: "2007-01-03", house: "R", senate: "R", houseSeats: "229-205", senateSeats: "55-44" },
+    { start: "2007-01-03", end: "2011-01-03", house: "D", senate: "D", houseSeats: "233-202", senateSeats: "51-49" },
+    { start: "2011-01-03", end: "2015-01-03", house: "R", senate: "D", houseSeats: "242-193", senateSeats: "53-47" },
+    { start: "2015-01-03", end: "2019-01-03", house: "R", senate: "R", houseSeats: "247-188", senateSeats: "54-46" },
+    { start: "2019-01-03", end: "2021-01-03", house: "D", senate: "R", houseSeats: "235-199", senateSeats: "53-47" },
+    { start: "2021-01-03", end: "2023-01-03", house: "D", senate: "T", houseSeats: "222-213", senateSeats: "50-50" },
+    { start: "2023-01-03", end: "2025-01-03", house: "R", senate: "D", houseSeats: "222-213", senateSeats: "51-49" },
+    { start: "2025-01-03", end: "2027-01-03", house: "R", senate: "R", houseSeats: "220-215", senateSeats: "53-47" }
+].map((p) => ({ ...p, startMs: new Date(p.start).getTime(), endMs: new Date(p.end).getTime() }));
+
+// Merge consecutive same-senate-party runs
+const SENATE_PERIODS = (() => {
+    const merged = [];
+    for (const p of CONGRESSIONAL_CONTROL) {
+        const last = merged[merged.length - 1];
+        if (last && last.senate === p.senate) { last.endMs = p.endMs; last.end = p.end; last.senateSeats = p.senateSeats; }
+        else merged.push({ ...p });
+    }
+    return merged;
+})();
+
+// Merge consecutive same-house-party runs
+const HOUSE_PERIODS = (() => {
+    const merged = [];
+    for (const p of CONGRESSIONAL_CONTROL) {
+        const last = merged[merged.length - 1];
+        if (last && last.house === p.house) { last.endMs = p.endMs; last.end = p.end; last.houseSeats = p.houseSeats; }
+        else merged.push({ ...p });
+    }
+    return merged;
+})();
+
+// ── Timeline State ───────────────────────────────────────────────────────────
+const tl = {
+    startYear: 1945,
+    endYear: 2029,
+    ROW_H: 52,
+    AXIS_H: 32,
+    PAD_TOP: 0,
+    PAD_SIDES: 0,
+    canvas: null,
+    ctx: null,
+    dpr: 1,
+    width: 0,
+    height: 0,
+    hovered: null
+};
+
+function yearToMs(y) { return new Date(`${y}-01-01`).getTime(); }
+function msToX(ms) {
+    const startMs = yearToMs(tl.startYear);
+    const endMs = yearToMs(tl.endYear);
+    return tl.PAD_SIDES + ((ms - startMs) / (endMs - startMs)) * (tl.width - tl.PAD_SIDES * 2);
+}
+function xToMs(x) {
+    const startMs = yearToMs(tl.startYear);
+    const endMs = yearToMs(tl.endYear);
+    return startMs + ((x - tl.PAD_SIDES) / (tl.width - tl.PAD_SIDES * 2)) * (endMs - startMs);
+}
+function msToYear(ms) { return new Date(ms).getFullYear(); }
+function formatShortDate(isoStr) {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function resizeCanvas() {
+    const wrap = tl.canvas.parentElement;
+    tl.dpr = window.devicePixelRatio || 1;
+    tl.width = wrap.clientWidth;
+    const rows = 3;
+    tl.height = rows * tl.ROW_H + tl.AXIS_H;
+    tl.canvas.width = tl.width * tl.dpr;
+    tl.canvas.height = tl.height * tl.dpr;
+    tl.canvas.style.height = tl.height + "px";
+    tl.ctx.setTransform(tl.dpr, 0, 0, tl.dpr, 0, 0);
+}
+
+function drawTimeline() {
+    const { ctx, width, height, ROW_H, AXIS_H, PAD_SIDES } = tl;
+    ctx.clearRect(0, 0, width, height);
+
+    const startMs = yearToMs(tl.startYear);
+    const endMs = yearToMs(tl.endYear);
+    const spanYears = tl.endYear - tl.startYear;
+
+    // Draw stripe rows
+    const rows = [
+        { data: PRESIDENTIAL_TERMS, partyKey: "party", nameKey: "name", y: 0 },
+        { data: SENATE_PERIODS,     partyKey: "senate", nameKey: null,   y: ROW_H },
+        { data: HOUSE_PERIODS,      partyKey: "house",  nameKey: null,   y: ROW_H * 2 }
+    ];
+
+    rows.forEach(({ data, partyKey, nameKey, y }) => {
+        data.forEach((entry) => {
+            const eStart = Math.max(entry.startMs, startMs);
+            const eEnd = Math.min(entry.endMs, endMs);
+            if (eEnd <= eStart) return;
+
+            const x1 = msToX(eStart);
+            const x2 = msToX(eEnd);
+            const w = x2 - x1;
+            if (w < 0.5) return;
+
+            const party = entry[partyKey] || "OTHER";
+            const isHovered = tl.hovered && tl.hovered.entry === entry && tl.hovered.row === y;
+
+            ctx.fillStyle = isHovered
+                ? (PARTY_COLORS_SOLID[party] || PARTY_COLORS_SOLID.OTHER).replace(/[\d.]+\)$/, "0.92)")
+                : (PARTY_COLORS_SOLID[party] || PARTY_COLORS_SOLID.OTHER);
+            ctx.fillRect(x1, y, w, ROW_H);
+
+            // Border between segments
+            ctx.strokeStyle = "rgba(10,22,16,0.6)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x1, y);
+            ctx.lineTo(x1, y + ROW_H);
+            ctx.stroke();
+
+            // Label if wide enough
+            if (w > 48 && nameKey && entry[nameKey]) {
+                const name = entry[nameKey].split(" (")[0]; // strip parenthetical
+                const lastName = name.split(" ").pop();
+                ctx.save();
+                ctx.fillStyle = "rgba(245,252,250,0.92)";
+                ctx.font = `600 ${Math.min(11, Math.max(8, w / 8))}px 'IBM Plex Mono', monospace`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.beginPath();
+                ctx.rect(x1, y, w, ROW_H);
+                ctx.clip();
+                ctx.fillText(w > 80 ? name : lastName, x1 + w / 2, y + ROW_H / 2);
+                ctx.restore();
+            } else if (w > 28 && !nameKey) {
+                // For senate/house just show party initial if narrow
+                const party = entry[partyKey] || "OTHER";
+                if (party !== "OTHER") {
+                    ctx.save();
+                    ctx.fillStyle = "rgba(245,252,250,0.7)";
+                    ctx.font = `700 ${Math.min(13, Math.max(9, w / 5))}px 'IBM Plex Mono', monospace`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.beginPath();
+                    ctx.rect(x1, y, w, ROW_H);
+                    ctx.clip();
+                    ctx.fillText(party === "T" ? "TIE" : party, x1 + w / 2, y + ROW_H / 2);
+                    ctx.restore();
+                }
+            }
+        });
+
+        // Row border
+        ctx.strokeStyle = "rgba(10,22,16,0.8)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y + ROW_H);
+        ctx.lineTo(width, y + ROW_H);
+        ctx.stroke();
+    });
+
+    // Year axis
+    const axisY = ROW_H * 3;
+    ctx.fillStyle = "rgba(154,184,175,0.06)";
+    ctx.fillRect(0, axisY, width, AXIS_H);
+
+    // Choose tick interval
+    let step = 1;
+    const pxPerYear = (width - PAD_SIDES * 2) / spanYears;
+    if (pxPerYear < 4) step = 25;
+    else if (pxPerYear < 8) step = 10;
+    else if (pxPerYear < 18) step = 5;
+    else if (pxPerYear < 36) step = 2;
+
+    ctx.fillStyle = "rgba(154,184,175,0.65)";
+    ctx.font = "500 10px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (let yr = Math.ceil(tl.startYear / step) * step; yr <= tl.endYear; yr += step) {
+        const x = msToX(yearToMs(yr));
+        if (x < 0 || x > width) continue;
+        ctx.strokeStyle = "rgba(154,184,175,0.2)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x, axisY);
+        ctx.lineTo(x, axisY + 6);
+        ctx.stroke();
+        ctx.fillText(String(yr), x, axisY + 18);
+    }
+
+    // Gas data starts marker (1983)
+    if (tl.startYear <= 1983 && tl.endYear >= 1983) {
+        const gasX = msToX(yearToMs(1983));
+        ctx.save();
+        ctx.strokeStyle = "rgba(75,220,150,0.45)";
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(gasX, 0);
+        ctx.lineTo(gasX, axisY);
+        ctx.stroke();
+        if (gasX + 80 < width) {
+            ctx.fillStyle = "rgba(75,220,150,0.5)";
+            ctx.font = "500 9px 'IBM Plex Mono', monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText("gas data starts", gasX + 4, 4);
+        }
+        ctx.restore();
+    }
+}
+
+// ── Tooltip ──────────────────────────────────────────────────────────────────
+function getHitAtPoint(canvasX, canvasY) {
+    const { ROW_H } = tl;
+    const startMs = yearToMs(tl.startYear);
+    const endMs = yearToMs(tl.endYear);
+
+    const rowDefs = [
+        { data: PRESIDENTIAL_TERMS, partyKey: "party", nameKey: "name", label: "President", y: 0 },
+        { data: SENATE_PERIODS, partyKey: "senate", nameKey: null, label: "Senate", y: ROW_H },
+        { data: HOUSE_PERIODS, partyKey: "house", nameKey: null, label: "House", y: ROW_H * 2 }
+    ];
+
+    for (const row of rowDefs) {
+        if (canvasY < row.y || canvasY >= row.y + ROW_H) continue;
+        const ms = xToMs(canvasX);
+        if (ms < startMs || ms > endMs) continue;
+
+        for (const entry of row.data) {
+            if (ms >= entry.startMs && ms < entry.endMs) {
+                return { entry, row: row.y, rowLabel: row.label, partyKey: row.partyKey, nameKey: row.nameKey };
+            }
+        }
+    }
+    return null;
+}
+
+function showTooltip(hit, mouseX, mouseY) {
+    const tooltip = document.getElementById("tooltip");
+    if (!hit || !hit.entry) { tooltip.classList.remove("visible"); return; }
+
+    const { entry, rowLabel, partyKey, nameKey } = hit;
+    const party = entry[partyKey] || "OTHER";
+    const partyLabel = PARTY_LABELS[party] || "Other";
+    const color = PARTY_COLORS_SOLID[party] || PARTY_COLORS_SOLID.OTHER;
+    const name = nameKey ? entry[nameKey] : null;
+
+    let html = `<div class="tooltip-title"><span class="tooltip-party" style="background:${color}"></span>${rowLabel}</div>`;
+    if (name) html += `<div>${name}</div>`;
+    html += `<div class="tooltip-sub">${formatShortDate(entry.start)} – ${formatShortDate(entry.end)}</div>`;
+    html += `<div class="tooltip-sub" style="margin-top:3px;">${partyLabel}</div>`;
+    if (entry.senateSeats && entry.senateSeats !== "—" && rowLabel === "Senate") {
+        html += `<div class="tooltip-sub">Seats: ${entry.senateSeats}</div>`;
+    }
+    if (entry.houseSeats && entry.houseSeats !== "—" && rowLabel === "House") {
+        html += `<div class="tooltip-sub">Seats: ${entry.houseSeats}</div>`;
+    }
+
+    tooltip.innerHTML = html;
+    tooltip.classList.add("visible");
+
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+    const tw = 270, th = 110;
+    let tx = mouseX + 14;
+    let ty = mouseY - 20;
+    if (tx + tw > vpW) tx = mouseX - tw - 14;
+    if (ty + th > vpH) ty = mouseY - th - 10;
+    tooltip.style.left = tx + "px";
+    tooltip.style.top = ty + "px";
+}
+
+// ── Init & Events ────────────────────────────────────────────────────────────
+function setRange(startYear, endYear) {
+    tl.startYear = startYear;
+    tl.endYear = endYear;
+    document.getElementById("startYearInput").value = startYear;
+    document.getElementById("endYearInput").value = endYear;
+    drawTimeline();
+}
+
+function init() {
+    tl.canvas = document.getElementById("timeline");
+    tl.ctx = tl.canvas.getContext("2d");
+    resizeCanvas();
+    drawTimeline();
+
+    // Preset buttons
+    document.querySelectorAll(".preset-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            setRange(Number(btn.dataset.start), Number(btn.dataset.end));
+        });
+    });
+
+    // Year inputs
+    function applyYearInputs() {
+        const s = parseInt(document.getElementById("startYearInput").value, 10);
+        const e = parseInt(document.getElementById("endYearInput").value, 10);
+        if (Number.isFinite(s) && Number.isFinite(e) && s < e) {
+            document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
+            setRange(s, e);
+        }
+    }
+    document.getElementById("startYearInput").addEventListener("change", applyYearInputs);
+    document.getElementById("endYearInput").addEventListener("change", applyYearInputs);
+
+    // Hover
+    tl.canvas.addEventListener("mousemove", (e) => {
+        const rect = tl.canvas.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) * (tl.canvas.width / tl.dpr / rect.width);
+        const cy = (e.clientY - rect.top) * (tl.canvas.height / tl.dpr / rect.height);
+        const hit = getHitAtPoint(cx, cy);
+
+        const prevEntry = tl.hovered ? tl.hovered.entry : null;
+        tl.hovered = hit;
+        if (hit !== prevEntry) drawTimeline();
+
+        showTooltip(hit, e.clientX, e.clientY);
+    });
+
+    tl.canvas.addEventListener("mouseleave", () => {
+        tl.hovered = null;
+        drawTimeline();
+        document.getElementById("tooltip").classList.remove("visible");
+    });
+
+    // Resize
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { resizeCanvas(); drawTimeline(); }, 80);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
