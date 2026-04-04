@@ -502,6 +502,15 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        .section-collapse-btn {
+            padding: 8px 12px;
+            font-size: 0.82rem;
+        }
+
+        .collapsible-content[hidden] {
+            display: none;
+        }
+
         .footer-note {
             padding: 14px 18px;
             color: var(--muted);
@@ -674,6 +683,14 @@
     </section>
 
     <section class="context-charts">
+        <div class="section-title" style="margin-bottom: 8px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
+                <p>Collapse this panel when you want to focus only on the main timeline.</p>
+            </div>
+            <button class="btn btn-secondary section-collapse-btn" id="toggleContextSection" type="button" aria-expanded="true">Collapse</button>
+        </div>
+        <div id="contextContent" class="collapsible-content">
         <div>
             <h3>Average Gas Price by Presidential Term</h3>
             <p class="status-inline">Bars show average gas price over each full term.</p>
@@ -688,15 +705,20 @@
         <div class="context-chart-box">
             <canvas id="congressBarChart"></canvas>
         </div>
+        </div>
     </section>
 
     <section class="controls">
+        <div class="section-title" style="margin-bottom:10px;">
+            <div>
+                <h2 style="margin:0 0 6px;">Window Controls</h2>
+                <p>Use presets or drag the timeline to focus your analysis window.</p>
+            </div>
+            <button class="btn btn-secondary section-collapse-btn" id="toggleControlsSection" type="button" aria-expanded="true">Collapse</button>
+        </div>
+        <div id="controlsContent" class="collapsible-content">
         <div class="controls-top">
             <div>
-                <div class="section-title" style="margin-bottom:10px; display:block;">
-                    <h2 style="margin-bottom:6px;">Window Controls</h2>
-                    <p>Use the quick presets or drag the timeline to focus the argument you want to test.</p>
-                </div>
                 <div class="range-pills" id="rangePills">
                     <button class="range-pill" data-years="5" type="button">Last 5Y</button>
                     <button class="range-pill" data-years="10" type="button">Last 10Y</button>
@@ -748,21 +770,33 @@
                         <span class="slider"></span>
                     </label>
                 </div>
+                <div class="toggle-group">
+                    <span>Main graph detailed dates</span>
+                    <label class="switch">
+                        <input type="checkbox" id="dateAxisToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
 
         <div id="range-slider"></div>
         <div class="date-display" id="date-range-text">Loading timeline…</div>
+        </div>
     </section>
 
     <section class="analytics" id="factsSection" hidden>
+        <div id="factsContent" class="collapsible-content">
         <div class="facts-column">
             <div class="section-title">
                 <div>
                     <h2>Fact Check</h2>
                     <p>These cards update with the selected range, so you can compare narratives against the actual window.</p>
                 </div>
-                <div class="status-inline" id="windowStatus">Waiting for selection…</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="status-inline" id="windowStatus">Waiting for selection…</div>
+                    <button class="btn btn-secondary section-collapse-btn" id="toggleFactsSection" type="button" aria-expanded="true">Collapse</button>
+                </div>
             </div>
             <div class="fact-list" id="factList">
                 <article class="fact-card">
@@ -806,6 +840,7 @@
                     <strong id="windowPeak">--</strong>
                 </div>
             </div>
+        </div>
         </div>
     </section>
 
@@ -918,6 +953,8 @@ const state = {
     showVehiclesOverlay: false,
     showDowOverlay: false,
     showNewsBubble: true,
+    showDetailedDates: false,
+    selectedNewsDate: null,
     presidentTermAverages: [],
     congressPeriodAverages: [],
     blendBoundaries: {
@@ -1132,6 +1169,19 @@ function setStatus(text, isError = false) {
         if (!el) return;
         el.textContent = text;
         el.classList.toggle("error", isError);
+    });
+}
+
+function wireSectionCollapse(buttonId, contentId) {
+    const button = document.getElementById(buttonId);
+    const content = document.getElementById(contentId);
+    if (!button || !content) return;
+
+    button.addEventListener("click", () => {
+        const willExpand = content.hidden;
+        content.hidden = !willExpand;
+        button.textContent = willExpand ? "Collapse" : "Expand";
+        button.setAttribute("aria-expanded", String(willExpand));
     });
 }
 
@@ -1381,9 +1431,22 @@ function updateNewsBubble(filtered) {
         return;
     }
 
-    const selectedDate = filtered[filtered.length - 1].t;
-    const current = filtered[filtered.length - 1].y;
-    const prior = filtered[Math.max(0, filtered.length - 5)]?.y;
+    const rangeStart = filtered[0].t.getTime();
+    const rangeEnd = filtered[filtered.length - 1].t.getTime();
+    const isSelectedInRange = state.selectedNewsDate instanceof Date
+        && !Number.isNaN(state.selectedNewsDate.getTime())
+        && state.selectedNewsDate.getTime() >= rangeStart
+        && state.selectedNewsDate.getTime() <= rangeEnd;
+
+    const selectedDate = isSelectedInRange ? state.selectedNewsDate : filtered[filtered.length - 1].t;
+    const nearestPoint = filtered.reduce((best, point) => {
+        const diff = Math.abs(point.t.getTime() - selectedDate.getTime());
+        if (!best || diff < best.diff) return { point, diff };
+        return best;
+    }, null)?.point;
+    const selectedIndex = filtered.findIndex((point) => point === nearestPoint);
+    const current = nearestPoint?.y;
+    const prior = selectedIndex > 0 ? filtered[Math.max(0, selectedIndex - 4)]?.y : filtered[0]?.y;
     const direction = Number.isFinite(prior) ? (current - prior > 0 ? "rising" : "falling") : "moving";
 
     const nearest = NEWS_EVENTS
@@ -1394,14 +1457,15 @@ function updateNewsBubble(filtered) {
         ? `${formatDate(selectedDate)} · ${nearest.title}`
         : `${formatDate(selectedDate)} · Market Context`);
     setText("newsBubbleBody", nearest
-        ? `${nearest.detail} Current trend is ${direction}, with gas at ${formatCurrency(current)}.`
-        : `No tagged major event for this date. Current trend is ${direction}, with gas at ${formatCurrency(current)}.`);
+        ? `${nearest.detail} Current trend near this date is ${direction}, with gas at ${formatCurrency(current)}.`
+        : `No tagged major event for this date. Current trend near this date is ${direction}, with gas at ${formatCurrency(current)}.`);
     bubble.hidden = false;
 }
 
 function updateChart() {
     const filtered = getFilteredData();
     if (!filtered.length) return;
+    const xTimeUnit = state.showDetailedDates ? "month" : "year";
 
     updateSummary(filtered);
     buildFactCards(filtered);
@@ -1478,6 +1542,7 @@ function updateChart() {
         state.chart.data.datasets = datasets;
         state.chart.options.scales.x.min = minDate;
         state.chart.options.scales.x.max = maxDate;
+        state.chart.options.scales.x.time.unit = xTimeUnit;
         state.chart.update("none");
     } else {
         const ctx = document.getElementById("mainChart").getContext("2d");
@@ -1496,12 +1561,23 @@ function updateChart() {
                     mode: "index",
                     intersect: false
                 },
+                onClick: (_event, elements, chart) => {
+                    if (!elements || !elements.length) return;
+                    const first = elements[0];
+                    const dataset = chart?.data?.datasets?.[first.datasetIndex];
+                    const point = dataset?.data?.[first.index];
+                    const xValue = point?.x || point?.t;
+                    const parsedDate = new Date(xValue);
+                    if (Number.isNaN(parsedDate.getTime())) return;
+                    state.selectedNewsDate = parsedDate;
+                    updateChart();
+                },
                 scales: {
                     x: {
                         type: "time",
                         min: minDate,
                         max: maxDate,
-                        time: { unit: "year" },
+                        time: { unit: xTimeUnit },
                         grid: { color: "rgba(255,255,255,0.08)" },
                         ticks: { color: "#9ab8af" }
                     },
@@ -1630,6 +1706,7 @@ function syncActiveRangePill() {
 function applyYearsRange(years) {
     if (!state.slider || !state.allData.length) return;
     state.selectedPreset = `years:${years}`;
+    state.selectedNewsDate = null;
     const end = state.allData[state.allData.length - 1].t;
     const start = new Date(end);
     start.setFullYear(end.getFullYear() - years);
@@ -1644,6 +1721,7 @@ function applyYearsRange(years) {
 function applyFullRange() {
     if (!state.slider || !state.allData.length) return;
     state.selectedPreset = "full";
+    state.selectedNewsDate = null;
     state.slider.set([
         state.allData[0].t.getTime(),
         state.allData[state.allData.length - 1].t.getTime()
@@ -1768,6 +1846,14 @@ function wireInteractions() {
         state.showNewsBubble = event.target.checked;
         updateChart();
     });
+    document.getElementById("dateAxisToggle").addEventListener("change", (event) => {
+        state.showDetailedDates = event.target.checked;
+        updateChart();
+    });
+
+    wireSectionCollapse("toggleControlsSection", "controlsContent");
+    wireSectionCollapse("toggleFactsSection", "factsContent");
+    wireSectionCollapse("toggleContextSection", "contextContent");
 
     document.getElementById("rangePills").addEventListener("click", (event) => {
         const button = event.target.closest(".range-pill");
@@ -1805,6 +1891,7 @@ function wireInteractions() {
     }
 
     state.showNewsBubble = document.getElementById("newsToggle").checked;
+    state.showDetailedDates = document.getElementById("dateAxisToggle").checked;
 }
 
 wireInteractions();
