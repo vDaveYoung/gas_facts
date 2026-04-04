@@ -485,6 +485,32 @@
             color: var(--teal);
         }
 
+        .news-columns {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .news-column {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .news-column h4 {
+            margin: 0;
+            font-size: 0.92rem;
+            color: var(--ink);
+        }
+
+        @media (max-width: 900px) {
+            .news-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .context-charts {
             margin-top: 20px;
             display: grid;
@@ -690,7 +716,16 @@
         <div class="news-panel" id="newsPanel" hidden>
             <h3>Top News Headlines Near Selected Date</h3>
             <p class="news-meta" id="newsPanelMeta">Select a point on the timeline to focus headlines.</p>
-            <ol class="news-list" id="newsHeadlinesList"></ol>
+            <div class="news-columns">
+                <div class="news-column">
+                    <h4>World</h4>
+                    <ol class="news-list" id="worldNewsList"></ol>
+                </div>
+                <div class="news-column">
+                    <h4>Oil/Gas Market</h4>
+                    <ol class="news-list" id="oilNewsList"></ol>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -930,20 +965,43 @@ const US_REGISTERED_VEHICLES = [
     source: "fhwa-annual-registered-vehicles"
 }));
 
+const DOW_FALLBACK_SERIES = [
+    { year: 1983, avg: 1190 },
+    { year: 1987, avg: 2238 },
+    { year: 1990, avg: 2633 },
+    { year: 1995, avg: 4494 },
+    { year: 2000, avg: 10729 },
+    { year: 2003, avg: 9006 },
+    { year: 2007, avg: 13178 },
+    { year: 2009, avg: 8885 },
+    { year: 2013, avg: 15009 },
+    { year: 2016, avg: 17927 },
+    { year: 2019, avg: 26379 },
+    { year: 2020, avg: 26890 },
+    { year: 2021, avg: 34798 },
+    { year: 2022, avg: 32875 },
+    { year: 2023, avg: 35220 },
+    { year: 2024, avg: 38987 }
+].map((point) => ({
+    t: new Date(`${point.year}-07-01`),
+    y: point.avg,
+    source: "dow-fallback-annual-average"
+}));
+
 const NEWS_EVENTS = [
-    { date: "1979-01-16", title: "Iranian Revolution", detail: "Supply disruption fears increased crude volatility and gasoline pressure.", link: "https://en.wikipedia.org/wiki/Iranian_Revolution" },
-    { date: "1990-08-02", title: "Iraq Invades Kuwait", detail: "Geopolitical shock drove oil risk premium sharply higher.", link: "https://en.wikipedia.org/wiki/Invasion_of_Kuwait" },
-    { date: "1991-01-17", title: "Operation Desert Storm", detail: "War-related uncertainty kept energy markets highly reactive.", link: "https://en.wikipedia.org/wiki/Gulf_War" },
-    { date: "1998-12-01", title: "Asian Financial Aftershock", detail: "Weak global demand helped keep oil and gas prices subdued.", link: "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis" },
-    { date: "2001-09-11", title: "9/11 Attacks", detail: "Demand expectations and risk repricing reshaped energy markets.", link: "https://en.wikipedia.org/wiki/September_11_attacks" },
-    { date: "2003-03-20", title: "Iraq War Begins", detail: "Conflict risk contributed to higher oil price volatility.", link: "https://en.wikipedia.org/wiki/Iraq_War" },
-    { date: "2008-07-11", title: "2008 Oil Spike", detail: "Crude neared historical highs before the financial crisis collapse.", link: "https://en.wikipedia.org/wiki/2000s_energy_crisis" },
-    { date: "2008-09-15", title: "Lehman Collapse", detail: "Demand concerns and recession shock pushed oil sharply lower.", link: "https://en.wikipedia.org/wiki/Lehman_Brothers" },
-    { date: "2014-11-27", title: "OPEC Output Strategy Shift", detail: "Supply-heavy strategy accelerated crude price declines.", link: "https://en.wikipedia.org/wiki/2010s_oil_glut" },
-    { date: "2020-03-11", title: "COVID Pandemic Shock", detail: "Demand collapse triggered severe oil and gasoline dislocations.", link: "https://en.wikipedia.org/wiki/COVID-19_pandemic" },
-    { date: "2020-04-20", title: "WTI Futures Crash", detail: "Storage stress pushed front-month oil futures briefly negative.", link: "https://en.wikipedia.org/wiki/2020_Russia%E2%80%93Saudi_Arabia_oil_price_war" },
-    { date: "2022-02-24", title: "Russia Invades Ukraine", detail: "Supply risk and sanctions concerns lifted global oil prices.", link: "https://en.wikipedia.org/wiki/Russian_invasion_of_Ukraine" },
-    { date: "2023-10-07", title: "Middle East Conflict Escalation", detail: "Risk premium rose on fears of broader regional supply disruption.", link: "https://en.wikipedia.org/wiki/Israel%E2%80%93Hamas_war" }
+    { date: "1979-01-16", category: "world", title: "Iranian Revolution", detail: "Major political change in Iran reshaped global geopolitics and energy security.", link: "https://en.wikipedia.org/wiki/Iranian_Revolution" },
+    { date: "1990-08-02", category: "oil", title: "Iraq Invades Kuwait", detail: "Geopolitical shock drove oil risk premium sharply higher.", link: "https://en.wikipedia.org/wiki/Invasion_of_Kuwait" },
+    { date: "1991-01-17", category: "world", title: "Operation Desert Storm", detail: "War-related uncertainty kept global markets and trade flows highly reactive.", link: "https://en.wikipedia.org/wiki/Gulf_War" },
+    { date: "1998-12-01", category: "oil", title: "Asian Financial Aftershock", detail: "Weak global demand helped keep oil and gas prices subdued.", link: "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis" },
+    { date: "2001-09-11", category: "world", title: "9/11 Attacks", detail: "Global risk sentiment and travel demand expectations shifted rapidly.", link: "https://en.wikipedia.org/wiki/September_11_attacks" },
+    { date: "2003-03-20", category: "oil", title: "Iraq War Begins", detail: "Conflict risk contributed to higher oil price volatility.", link: "https://en.wikipedia.org/wiki/Iraq_War" },
+    { date: "2008-07-11", category: "oil", title: "2008 Oil Spike", detail: "Crude neared historical highs before the financial crisis collapse.", link: "https://en.wikipedia.org/wiki/2000s_energy_crisis" },
+    { date: "2008-09-15", category: "world", title: "Lehman Collapse", detail: "Global credit stress and recession fears triggered broad market repricing.", link: "https://en.wikipedia.org/wiki/Lehman_Brothers" },
+    { date: "2014-11-27", category: "oil", title: "OPEC Output Strategy Shift", detail: "Supply-heavy strategy accelerated crude price declines.", link: "https://en.wikipedia.org/wiki/2010s_oil_glut" },
+    { date: "2020-03-11", category: "world", title: "COVID Pandemic Shock", detail: "Pandemic impacts disrupted economies, logistics, and demand patterns worldwide.", link: "https://en.wikipedia.org/wiki/COVID-19_pandemic" },
+    { date: "2020-04-20", category: "oil", title: "WTI Futures Crash", detail: "Storage stress pushed front-month oil futures briefly negative.", link: "https://en.wikipedia.org/wiki/2020_Russia%E2%80%93Saudi_Arabia_oil_price_war" },
+    { date: "2022-02-24", category: "oil", title: "Russia Invades Ukraine", detail: "Supply risk and sanctions concerns lifted global oil prices.", link: "https://en.wikipedia.org/wiki/Russian_invasion_of_Ukraine" },
+    { date: "2023-10-07", category: "world", title: "Middle East Conflict Escalation", detail: "Risk premium rose on fears of broader regional disruption.", link: "https://en.wikipedia.org/wiki/Israel%E2%80%93Hamas_war" }
 ].map((event) => ({
     ...event,
     t: new Date(event.date)
@@ -1427,18 +1485,20 @@ function parseDowCsv(csvText) {
 async function fetchDowSeries() {
     try {
         const response = await fetch("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DJIA");
-        if (!response.ok) return [];
+        if (!response.ok) return DOW_FALLBACK_SERIES;
         const text = await response.text();
-        return parseDowCsv(text);
+        const parsed = parseDowCsv(text);
+        return parsed.length ? parsed : DOW_FALLBACK_SERIES;
     } catch {
-        return [];
+        return DOW_FALLBACK_SERIES;
     }
 }
 
 function updateNewsHeadlinesPanel(filtered) {
     const panel = document.getElementById("newsPanel");
-    const list = document.getElementById("newsHeadlinesList");
-    if (!panel || !list) return;
+    const worldList = document.getElementById("worldNewsList");
+    const oilList = document.getElementById("oilNewsList");
+    if (!panel || !worldList || !oilList) return;
     if (!state.showNewsBubble || !filtered.length) {
         panel.hidden = true;
         return;
@@ -1466,18 +1526,23 @@ function updateNewsHeadlinesPanel(filtered) {
         .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
         .sort((a, b) => a.diff - b.diff)[0];
 
-    const topHeadlines = NEWS_EVENTS
+    const sortedByDate = NEWS_EVENTS
         .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
-        .sort((a, b) => a.diff - b.diff)
-        .slice(0, 5);
+        .sort((a, b) => a.diff - b.diff);
+    const worldHeadlines = sortedByDate.filter((item) => item.category === "world").slice(0, 4);
+    const oilHeadlines = sortedByDate.filter((item) => item.category === "oil").slice(0, 4);
 
     setText("newsPanelMeta", nearest
         ? `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`
         : `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
 
-    list.innerHTML = topHeadlines.map((item) =>
+    worldList.innerHTML = worldHeadlines.length ? worldHeadlines.map((item) =>
         `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("");
+    ).join("") : `<li>No world headlines tagged near this date yet.</li>`;
+
+    oilList.innerHTML = oilHeadlines.length ? oilHeadlines.map((item) =>
+        `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
+    ).join("") : `<li>No oil/gas headlines tagged near this date yet.</li>`;
 
     panel.hidden = false;
 }
@@ -1655,7 +1720,10 @@ function updateChart() {
                                     return `FHWA annual count: ${Number(value).toLocaleString()} vehicles`;
                                 }
                                 if (items?.[0]?.dataset?.label === "DOW annual average") {
-                                    return "FRED DJIA annual average";
+                                    const source = items?.[0]?.raw?.source;
+                                    return source === "dow-fallback-annual-average"
+                                        ? "DOW annual average (fallback series)"
+                                        : "FRED DJIA annual average";
                                 }
                                 const source = items?.[0]?.raw?.source;
                                 if (source === "monthly-total-pta") return "Source granularity: monthly";
