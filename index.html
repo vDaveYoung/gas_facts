@@ -788,16 +788,9 @@
                     </label>
                 </div>
                 <div class="toggle-group">
-                    <span>Overlay oil production (OPEC / U.S. / World)</span>
+                    <span>Overlay oil production (World / OPEC / U.S. + top-5 producers)</span>
                     <label class="switch">
                         <input type="checkbox" id="productionToggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-group">
-                    <span>Overlay top-5 oil producers (Saudi Arabia / Russia / Canada / UAE)</span>
-                    <label class="switch">
-                        <input type="checkbox" id="producersToggle">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -1071,7 +1064,6 @@ const state = {
     showVehiclesOverlay: false,
     showDowOverlay: false,
     showProductionOverlay: false,
-    showProducersOverlay: false,
     showNewsBubble: true,
     hoveredSeriesLabel: "",
     newsMatchMode: "exact",
@@ -2051,7 +2043,7 @@ function updateChart() {
         }
     }
 
-    if (state.showProducersOverlay) {
+    if (state.showProductionOverlay) {
         const toMainOverlayPoints = (series) => buildAnnualOverlayPoints(series, filtered[0].t, filtered[filtered.length - 1].t);
 
         const saudiPoints = toMainOverlayPoints(state.productionSeries.saudi);
@@ -2282,12 +2274,9 @@ function updateChart() {
         narrativeParts.push("DOW annual-average overlay is active for market context.");
     }
     if (state.showProductionOverlay) {
-        narrativeParts.push("Oil production overlays are active (World, OPEC, and U.S. annual TBPD).");
+        narrativeParts.push("Oil production overlays are active (World, OPEC, U.S., Saudi Arabia, Russia, Canada, and U.A.E. annual TBPD).");
     } else {
         narrativeParts.push("Use the production overlay to compare price movement with supply-side context.");
-    }
-    if (state.showProducersOverlay) {
-        narrativeParts.push("Top-5 oil producers (Saudi Arabia, Russia, Canada, U.A.E.) are overlaid for supply concentration context.");
     }
     setText("chartNarrative", narrativeParts.join(" "));
     updateProductionChart();
@@ -2477,10 +2466,6 @@ function wireInteractions() {
         state.showProductionOverlay = event.target.checked;
         updateChart();
     });
-    document.getElementById("producersToggle").addEventListener("change", (event) => {
-        state.showProducersOverlay = event.target.checked;
-        updateChart();
-    });
     document.getElementById("newsToggle").addEventListener("change", (event) => {
         state.showNewsBubble = event.target.checked;
         updateChart();
@@ -2541,7 +2526,6 @@ function wireInteractions() {
     state.showNewsBubble = document.getElementById("newsToggle").checked;
     state.showDetailedDates = document.getElementById("dateAxisToggle").checked;
     state.showProductionOverlay = document.getElementById("productionToggle").checked;
-    state.showProducersOverlay = document.getElementById("producersToggle").checked;
 }
 
 wireInteractions();
