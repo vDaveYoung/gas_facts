@@ -539,6 +539,11 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        #productionContent .context-chart-box {
+            min-height: 560px;
+            height: 72vh;
+        }
+
         .section-collapse-btn {
             padding: 8px 12px;
             font-size: 0.82rem;
@@ -749,8 +754,6 @@
                     <button class="range-pill" data-years="10" type="button">Last 10Y</button>
                     <button class="range-pill" data-years="20" type="button">Last 20Y</button>
                     <button class="range-pill" data-mode="full" type="button">All Data</button>
-                    <button class="range-pill" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
-                    <button class="range-pill" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
                 </div>
             </div>
 
@@ -764,6 +767,10 @@
                 </div>
                 <div class="toggle-group">
                     <span>Overlay presidential terms</span>
+                    <div class="range-pills" style="margin-top:8px;">
+                        <button class="range-pill shift-window-btn" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
+                        <button class="range-pill shift-window-btn" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
+                    </div>
                     <label class="switch">
                         <input type="checkbox" id="presidencyToggle">
                         <span class="slider"></span>
@@ -828,6 +835,10 @@
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Oil Production Context</h2>
                 <p>Annual crude oil production for the top 25 producing countries (TBPD).</p>
+                <div class="range-pills" style="margin-top:8px;">
+                    <button class="range-pill shift-window-btn" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
+                    <button class="range-pill shift-window-btn" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
+                </div>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleProductionSection" type="button" aria-expanded="true">Collapse</button>
         </div>
@@ -844,6 +855,10 @@
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
                 <p>Collapse this panel when you want to focus only on the main timeline.</p>
+                <div class="range-pills" style="margin-top:8px;">
+                    <button class="range-pill shift-window-btn" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier">◀ 1Y</button>
+                    <button class="range-pill shift-window-btn" data-shift-years="1" type="button" aria-label="Shift selected window one year later">1Y ▶</button>
+                </div>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleContextSection" type="button" aria-expanded="true">Collapse</button>
         </div>
@@ -1071,6 +1086,7 @@ const state = {
     showNewsBubble: true,
     hoveredSeriesLabel: "",
     productionHoverIndex: null,
+    productionLegendDate: null,
     newsMatchMode: "exact",
     showDetailedDates: false,
     selectedNewsDate: null,
@@ -1251,7 +1267,7 @@ function formatCompactDate(date) {
 
 function formatTbpd(value) {
     if (!Number.isFinite(value)) return "--";
-    return `${(value / 1000).toFixed(1)}M bpd`;
+    return `${(value / 1000).toFixed(1)}`;
 }
 
 function average(values) {
@@ -1315,10 +1331,10 @@ function withAlpha(hexColor, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function applyProductionHighlight(chart, activeIndex) {
+function applyProductionHighlight(chart, activeIndex, forceUpdate = false) {
     if (!chart) return;
     const nextIndex = Number.isInteger(activeIndex) ? activeIndex : null;
-    if ((chart.$activeDatasetIndex ?? null) === nextIndex) return;
+    if (!forceUpdate && (chart.$activeDatasetIndex ?? null) === nextIndex) return;
 
     chart.$activeDatasetIndex = nextIndex;
     state.productionHoverIndex = nextIndex;
@@ -1373,6 +1389,47 @@ function getSeriesValueAtDate(points, targetDate) {
     }
 
     return Number.isFinite(selected?.y) ? selected.y : NaN;
+}
+
+function clampDateToRange(date, rangeStart, rangeEnd) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+    const startMs = rangeStart instanceof Date ? rangeStart.getTime() : NaN;
+    const endMs = rangeEnd instanceof Date ? rangeEnd.getTime() : NaN;
+    const dateMs = date.getTime();
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return new Date(dateMs);
+    if (dateMs < startMs) return new Date(startMs);
+    if (dateMs > endMs) return new Date(endMs);
+    return new Date(dateMs);
+}
+
+function getProductionLegendReferenceDate(rangeStart, rangeEnd) {
+    const candidate = state.productionLegendDate instanceof Date && !Number.isNaN(state.productionLegendDate.getTime())
+        ? state.productionLegendDate
+        : new Date();
+    return clampDateToRange(candidate, rangeStart, rangeEnd) || new Date(rangeEnd);
+}
+
+function buildProductionMetaText(rangeStart, rangeEnd, legendReferenceDate) {
+    return `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Legend values reference ${formatDate(legendReferenceDate)}.`;
+}
+
+function setProductionLegendReferenceDate(date) {
+    const rangeStart = state.selectedStart || state.allData[0]?.t;
+    const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+    if (!(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return;
+
+    const nextDate = clampDateToRange(date, rangeStart, rangeEnd);
+    if (!nextDate) return;
+
+    const currentMs = state.productionLegendDate instanceof Date ? state.productionLegendDate.getTime() : NaN;
+    if (Number.isFinite(currentMs) && Math.abs(currentMs - nextDate.getTime()) < 12 * 60 * 60 * 1000) return;
+
+    state.productionLegendDate = nextDate;
+
+    if (state.productionChart) {
+        state.productionChart.update("none");
+    }
+    setText("productionMeta", buildProductionMetaText(rangeStart, rangeEnd, nextDate));
 }
 
 function wireSectionCollapse(buttonId, contentId) {
@@ -1963,12 +2020,7 @@ function updateProductionChart() {
 
     const rangeStart = state.selectedStart || state.allData[0]?.t;
     const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
-    const legendReferenceDate = state.selectedNewsDate instanceof Date
-        && !Number.isNaN(state.selectedNewsDate.getTime())
-        && state.selectedNewsDate >= rangeStart
-        && state.selectedNewsDate <= rangeEnd
-        ? state.selectedNewsDate
-        : rangeEnd;
+    const legendReferenceDate = getProductionLegendReferenceDate(rangeStart, rangeEnd);
     const toFilteredSeries = (series) => buildAnnualOverlayPoints(series, rangeStart, rangeEnd);
 
     const palette = [
@@ -2007,7 +2059,7 @@ function updateProductionChart() {
         const activeIndex = Number.isInteger(state.productionHoverIndex) && state.productionHoverIndex < datasets.length
             ? state.productionHoverIndex
             : null;
-        applyProductionHighlight(state.productionChart, activeIndex);
+        applyProductionHighlight(state.productionChart, activeIndex, true);
     } else {
         state.productionChart = new Chart(ctx, {
             type: "line",
@@ -2061,11 +2113,14 @@ function updateProductionChart() {
                             generateLabels: (chart) => {
                                 const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
                                 const activeIndex = chart.$activeDatasetIndex;
+                                const currentRangeStart = state.selectedStart || state.allData[0]?.t;
+                                const currentRangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+                                const currentLegendDate = getProductionLegendReferenceDate(currentRangeStart, currentRangeEnd);
                                 return labels.map((item) => {
                                     const dataset = chart.data.datasets[item.datasetIndex] || {};
                                     const baseColor = dataset.baseColor || dataset.borderColor || item.strokeStyle;
                                     const isActive = Number.isInteger(activeIndex) && activeIndex === item.datasetIndex;
-                                    const pointValue = getSeriesValueAtDate(dataset.data, legendReferenceDate);
+                                    const pointValue = getSeriesValueAtDate(dataset.data, currentLegendDate);
                                     const valueText = Number.isFinite(pointValue) ? formatTbpd(pointValue) : "--";
                                     const legendText = `${dataset.label} - ${valueText}`;
 
@@ -2092,16 +2147,7 @@ function updateProductionChart() {
                             }
                         }
                     },
-                    tooltip: {
-                        backgroundColor: "rgba(4, 15, 12, 0.95)",
-                        borderColor: "rgba(255,255,255,0.12)",
-                        borderWidth: 1,
-                        callbacks: {
-                            title: (items) => formatDate(new Date(items[0].parsed.x)),
-                            label: (context) => `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`,
-                            footer: () => "Source: EIA International crude production (TBPD)"
-                        }
-                    }
+                    tooltip: { enabled: false }
                 }
             }
         });
@@ -2111,7 +2157,7 @@ function updateProductionChart() {
     if (!hasAny) {
         setText("productionMeta", "No production points available in this selected window.");
     } else {
-        setText("productionMeta", `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Legend values reference ${formatDate(legendReferenceDate)}.`);
+        setText("productionMeta", buildProductionMetaText(rangeStart, rangeEnd, legendReferenceDate));
     }
 }
 
@@ -2340,6 +2386,16 @@ function updateChart() {
                     const resolved = (elements && elements.length)
                         ? elements
                         : chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+
+                    const xScale = chart?.scales?.x;
+                    const area = chart?.chartArea;
+                    if (xScale && area && Number.isFinite(event?.x) && event.x >= area.left && event.x <= area.right) {
+                        const hoverDate = new Date(xScale.getValueForPixel(event.x));
+                        if (!Number.isNaN(hoverDate.getTime())) {
+                            setProductionLegendReferenceDate(hoverDate);
+                        }
+                    }
+
                     if (!resolved || !resolved.length) {
                         chart.canvas.style.cursor = "default";
                         setHoveredSeriesStatus("");
@@ -2708,6 +2764,14 @@ function wireInteractions() {
     document.getElementById("dateAxisToggle").addEventListener("change", (event) => {
         state.showDetailedDates = event.target.checked;
         updateChart();
+    });
+
+    document.querySelectorAll(".shift-window-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+            const shiftYears = Number(button.dataset.shiftYears || 0);
+            if (!shiftYears) return;
+            shiftSelectedRangeByYears(shiftYears);
+        });
     });
 
     wireSectionCollapse("toggleControlsSection", "controlsContent");
