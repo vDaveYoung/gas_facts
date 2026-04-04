@@ -1517,11 +1517,44 @@ function parseDowCsv(csvText) {
     });
     return Array.from(yearly.entries())
         .map(([year, bucket]) => ({
-            t: new Date(`${year}-07-01`),
+            t: new Date(`${year}-01-01`),
             y: bucket.sum / bucket.count,
             source: "fred-djia-annual-average"
         }))
         .sort((a, b) => a.t - b.t);
+}
+
+function buildAnnualOverlayPoints(series, rangeStart, rangeEnd) {
+    if (!Array.isArray(series) || !series.length || !(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) {
+        return [];
+    }
+
+    const inRange = series.filter((point) => point.t >= rangeStart && point.t <= rangeEnd);
+    const lastBeforeStart = [...series].reverse().find((point) => point.t < rangeStart) || null;
+    const points = [];
+
+    if (lastBeforeStart) {
+        points.push({
+            x: rangeStart,
+            y: lastBeforeStart.y,
+            source: lastBeforeStart.source,
+            carryForward: true
+        });
+    }
+
+    points.push(...inRange.map((point) => ({ x: point.t, y: point.y, source: point.source })));
+
+    const lastVisible = points.length ? points[points.length - 1] : null;
+    if (lastVisible && lastVisible.x < rangeEnd) {
+        points.push({
+            x: rangeEnd,
+            y: lastVisible.y,
+            source: lastVisible.source,
+            carryForward: true
+        });
+    }
+
+    return points;
 }
 
 async function fetchDowSeries() {
@@ -1726,7 +1759,7 @@ function normalizeProductionRows(rows, sourceLabel) {
             const year = Number.parseInt(row.period, 10);
             const value = Number.parseFloat(row.value);
             return {
-                t: new Date(`${year}-07-01`),
+                t: new Date(`${year}-01-01`),
                 y: value,
                 source: sourceLabel
             };
@@ -1774,13 +1807,9 @@ function updateProductionChart() {
     const ctx = document.getElementById("productionChart")?.getContext("2d");
     if (!ctx) return;
 
-    const toFilteredSeries = (series) => series
-        .filter((point) => {
-            if (state.selectedStart && point.t < state.selectedStart) return false;
-            if (state.selectedEnd && point.t > state.selectedEnd) return false;
-            return true;
-        })
-        .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+    const rangeStart = state.selectedStart || state.allData[0]?.t;
+    const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+    const toFilteredSeries = (series) => buildAnnualOverlayPoints(series, rangeStart, rangeEnd);
 
     const world = toFilteredSeries(state.productionSeries.world);
     const opec = toFilteredSeries(state.productionSeries.opec);
@@ -1873,9 +1902,7 @@ function updateProductionChart() {
     if (!hasAny) {
         setText("productionMeta", "No production points available in this selected window.");
     } else {
-        const fallbackStart = state.allData[0]?.t;
-        const fallbackEnd = state.allData[state.allData.length - 1]?.t;
-        setText("productionMeta", `Showing annual crude production context for ${formatCompactDate(state.selectedStart || fallbackStart)} to ${formatCompactDate(state.selectedEnd || fallbackEnd)}.`);
+        setText("productionMeta", `Showing annual crude production context for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}.`);
     }
 }
 
@@ -1933,9 +1960,7 @@ function updateChart() {
     }
 
     if (state.showDowOverlay) {
-        const dowPoints = state.dowSeries
-            .filter((point) => point.t >= filtered[0].t && point.t <= filtered[filtered.length - 1].t)
-            .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+        const dowPoints = buildAnnualOverlayPoints(state.dowSeries, filtered[0].t, filtered[filtered.length - 1].t);
 
         if (dowPoints.length) {
             datasets.push({
@@ -1953,9 +1978,7 @@ function updateChart() {
     }
 
     if (state.showProductionOverlay) {
-        const toMainOverlayPoints = (series) => series
-            .filter((point) => point.t >= filtered[0].t && point.t <= filtered[filtered.length - 1].t)
-            .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+        const toMainOverlayPoints = (series) => buildAnnualOverlayPoints(series, filtered[0].t, filtered[filtered.length - 1].t);
 
         const worldPoints = toMainOverlayPoints(state.productionSeries.world);
         const opecPoints = toMainOverlayPoints(state.productionSeries.opec);
