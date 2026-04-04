@@ -3,125 +3,1456 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gas Price Reality Check</title>
+    <title>Gas Facts | Check Your Facts at the Door</title>
+    <meta name="description" content="Fact-check fuel price narratives with long-run U.S. gas history, selection-aware stats, and an inflation-adjusted view.">
+    <meta name="theme-color" content="#10322a">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
-        .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
-        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        
-        /* The Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(26px); }
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider/dist/nouislider.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/nouislider/dist/nouislider.min.js"></script>
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .stat-box { background: #f1f5f9; padding: 16px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-val { font-size: 1.75rem; font-weight: 800; color: var(--primary); display: block; }
-        .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
-        #chart-container { height: 45vh; }
+    <style>
+        :root {
+            --bg: #071512;
+            --panel: rgba(7, 26, 22, 0.84);
+            --panel-strong: #0e201d;
+            --panel-soft: rgba(11, 38, 32, 0.68);
+            --line: rgba(186, 222, 214, 0.16);
+            --ink: #edf8f4;
+            --muted: #9ab8af;
+            --teal: #58d0b3;
+            --sea: #3a8fdd;
+            --amber: #ffb449;
+            --rose: #f27f61;
+            --shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+            --radius: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(88, 208, 179, 0.18), transparent 30%),
+                radial-gradient(circle at top right, rgba(255, 180, 73, 0.12), transparent 26%),
+                linear-gradient(160deg, #04100d 0%, #081815 52%, #061310 100%);
+            padding: 22px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 36px 36px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 82%);
+        }
+
+        .app-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero,
+        .controls,
+        .analytics,
+        .chart-panel,
+        .footer-note {
+            backdrop-filter: blur(20px);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+            padding: 28px;
+            overflow: hidden;
+        }
+
+        .eyebrow,
+        .micro-label,
+        .meta-chip,
+        .date-display,
+        .footer-note,
+        .insight-kicker {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .eyebrow {
+            color: var(--amber);
+            font-size: 0.82rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: clamp(2.4rem, 5vw, 4.9rem);
+            line-height: 0.96;
+            margin: 0 0 18px;
+            max-width: 11ch;
+        }
+
+        .hero p {
+            color: var(--muted);
+            max-width: 60ch;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin: 0 0 18px;
+        }
+
+        .hero-actions,
+        .toggle-zone,
+        .range-pills,
+        .blend-legend,
+        .stat-grid,
+        .fact-list,
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn,
+        .range-pill {
+            appearance: none;
+            border: 1px solid rgba(237, 248, 244, 0.14);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--ink);
+            border-radius: 999px;
+            padding: 12px 16px;
+            font: inherit;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .btn:hover,
+        .range-pill:hover,
+        .btn:focus-visible,
+        .range-pill:focus-visible {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(237, 248, 244, 0.28);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--amber), #ff8a4c);
+            border-color: transparent;
+            color: #1b1306;
+            font-weight: 700;
+        }
+
+        .btn-secondary {
+            color: var(--teal);
+            border-color: rgba(88, 208, 179, 0.26);
+        }
+
+        .hero-meta {
+            margin-top: 18px;
+        }
+
+        .meta-chip {
+            padding: 10px 12px;
+            border-radius: 999px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.79rem;
+        }
+
+        .hero-side {
+            display: grid;
+            gap: 14px;
+            align-content: start;
+        }
+
+        .headline-card,
+        .stat-card,
+        .fact-card {
+            border-radius: 22px;
+            border: 1px solid rgba(237, 248, 244, 0.08);
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+        }
+
+        .headline-card {
+            padding: 22px;
+            background:
+                radial-gradient(circle at top right, rgba(88, 208, 179, 0.2), transparent 42%),
+                linear-gradient(160deg, rgba(8, 30, 25, 0.92), rgba(12, 28, 24, 0.86));
+        }
+
+        .headline-card .micro-label,
+        .stat-card .micro-label,
+        .insight-kicker {
+            color: var(--muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .headline-price {
+            font-size: clamp(2.8rem, 5vw, 4.2rem);
+            line-height: 0.95;
+            margin: 10px 0;
+        }
+
+        .headline-subcopy {
+            color: var(--muted);
+            font-size: 0.96rem;
+        }
+
+        .stat-grid {
+            gap: 14px;
+        }
+
+        .stat-card {
+            flex: 1 1 180px;
+            min-width: 0;
+            padding: 18px;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.6rem;
+            margin-top: 8px;
+            margin-bottom: 6px;
+        }
+
+        .stat-note {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .controls,
+        .analytics,
+        .chart-panel,
+        .footer-note {
+            margin-top: 20px;
+        }
+
+        .controls {
+            padding: 22px 24px;
+        }
+
+        .controls-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .toggle-zone {
+            align-items: center;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .toggle-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        #range-slider {
+            margin: 18px 8px 14px;
+        }
+
+        .noUi-target {
+            border: 0;
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.07);
+            height: 8px;
+        }
+
+        .noUi-connect {
+            background: linear-gradient(90deg, var(--sea), var(--teal));
+        }
+
+        .noUi-handle {
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            top: -7px;
+            border: 2px solid rgba(255, 255, 255, 0.82);
+            background: #0f2923;
+            box-shadow: none;
+        }
+
+        .noUi-handle::before,
+        .noUi-handle::after {
+            display: none;
+        }
+
+        .range-pills {
+            margin-bottom: 8px;
+        }
+
+        .range-pill.active {
+            background: rgba(88, 208, 179, 0.16);
+            border-color: rgba(88, 208, 179, 0.42);
+            color: var(--teal);
+        }
+
+        .date-display {
+            color: var(--muted);
+            font-size: 0.86rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .analytics {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 18px;
+            padding: 24px;
+        }
+
+        .facts-column,
+        .selection-column {
+            min-width: 0;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .section-title p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        .fact-list {
+            gap: 14px;
+        }
+
+        .fact-card {
+            flex: 1 1 220px;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .fact-card strong {
+            display: block;
+            margin-top: 10px;
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+
+        .fact-card p {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .selection-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .selection-stat {
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .selection-stat span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .selection-stat strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 1.25rem;
+        }
+
+        .chart-panel {
+            padding: 24px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-header p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            max-width: 60ch;
+        }
+
+        .blend-legend {
+            margin-top: 10px;
+            gap: 8px;
+        }
+
+        .blend-chip {
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.02em;
+        }
+
+        .chart-box {
+            height: 56vh;
+            min-height: 360px;
+            position: relative;
+        }
+
+        .footer-note {
+            padding: 14px 18px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            letter-spacing: 0.03em;
+        }
+
+        .status-inline {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .status-inline.error {
+            color: #ff9981;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            transition: 0.25s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.25s ease;
+        }
+
+        input:checked + .slider {
+            background: rgba(255, 180, 73, 0.24);
+            border-color: rgba(255, 180, 73, 0.35);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        @media (max-width: 960px) {
+            .hero,
+            .analytics {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-top,
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .hero,
+            .controls,
+            .analytics,
+            .chart-panel {
+                padding: 18px;
+            }
+
+            h1 {
+                max-width: none;
+            }
+
+            .selection-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-box {
+                min-height: 300px;
+                height: 48vh;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="controls">
-            <h1 style="margin:0; font-size: 1.2rem;">Gas Price Reality Check</h1>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 0.8rem; font-weight: bold;">Adjust for Inflation</span>
-                <label class="switch">
-                    <input type="checkbox" id="inflation-toggle">
-                    <span class="slider"></span>
-                </label>
+<div class="app-shell">
+    <section class="hero">
+        <div>
+            <div class="eyebrow">Gas Facts Project</div>
+            <h1>Check your facts at the door.</h1>
+            <p>
+                This dashboard pulls weekly U.S. regular gasoline data from EIA and turns it into a cleaner
+                fact-check workflow: long-run charting, selection-aware stats, and a rough inflation-adjusted
+                view for calling out bad nostalgia with actual numbers.
+            </p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" id="installButton" hidden>Install App</button>
+                <button class="btn btn-secondary" id="jumpToFactsButton" type="button" aria-expanded="false">Show Facts</button>
+            </div>
+            <div class="hero-meta">
+                <div class="meta-chip" id="seriesMeta">Source: EIA weekly U.S. regular gasoline</div>
+                <div class="meta-chip" id="coverageMeta">Coverage: loading…</div>
+                <div class="meta-chip" id="statusMeta">Status: fetching data…</div>
             </div>
         </div>
-        
-        <div class="stats-grid">
-            <div class="stat-box"><span class="stat-label">Right Now</span><span id="p-now" class="stat-val">...</span></div>
-            <div class="stat-box"><span class="stat-label">1 Year Ago</span><span id="p-1y" class="stat-val">...</span></div>
-            <div class="stat-box"><span class="stat-label">5 Years Ago</span><span id="p-5y" class="stat-val">...</span></div>
-            <div class="stat-box"><span class="stat-label">10 Years Ago</span><span id="p-10y" class="stat-val">...</span></div>
+
+        <div class="hero-side">
+            <div class="headline-card">
+                <div class="micro-label">Latest Weekly Reading</div>
+                <div class="headline-price" id="headlinePrice">--</div>
+                <div class="headline-subcopy" id="headlineSubcopy">Waiting for current price data.</div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="micro-label">Latest In Today's Dollars</div>
+                    <span class="stat-value" id="headlineAdjusted">--</span>
+                    <div class="stat-note" id="headlineAdjustedNote">Inflation-adjusted view is approximate.</div>
+                </div>
+                <div class="stat-card">
+                    <div class="micro-label">All-Time Nominal Peak</div>
+                    <span class="stat-value" id="allTimePeak">--</span>
+                    <div class="stat-note" id="allTimePeakNote">Waiting for data.</div>
+                </div>
+                <div class="stat-card">
+                    <div class="micro-label">All-Time Cheapest Week</div>
+                    <span class="stat-value" id="allTimeLow">--</span>
+                    <div class="stat-note" id="allTimeLowNote">Waiting for data.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="chart-panel">
+        <div class="chart-header">
+            <div>
+                <h2 style="margin:0; font-size:1.3rem;">Gas Price Timeline</h2>
+                <p id="chartNarrative">Nominal prices are always shown. Turn on the buying-power overlay when you want to compare cash prices versus real purchasing impact.</p>
+                <div class="blend-legend" id="blendLegend">
+                    <span class="blend-chip">1983-1990: Monthly (Total, PTA)</span>
+                    <span class="blend-chip">1990-1993: Weekly (Regular)</span>
+                    <span class="blend-chip">1993+: Weekly (Total)</span>
+                </div>
+            </div>
+            <div class="status-inline" id="chartStatus">Loading chart...</div>
+        </div>
+        <div class="chart-box">
+            <canvas id="mainChart"></canvas>
+        </div>
+    </section>
+
+    <section class="controls">
+        <div class="controls-top">
+            <div>
+                <div class="section-title" style="margin-bottom:10px; display:block;">
+                    <h2 style="margin-bottom:6px;">Window Controls</h2>
+                    <p>Use the quick presets or drag the timeline to focus the argument you want to test.</p>
+                </div>
+                <div class="range-pills" id="rangePills">
+                    <button class="range-pill" data-years="5" type="button">Last 5Y</button>
+                    <button class="range-pill" data-years="10" type="button">Last 10Y</button>
+                    <button class="range-pill" data-years="20" type="button">Last 20Y</button>
+                    <button class="range-pill" data-mode="full" type="button">All Data</button>
+                </div>
+            </div>
+
+            <div class="toggle-zone">
+                <div class="toggle-group">
+                    <span>Overlay buying power estimate</span>
+                    <label class="switch">
+                        <input type="checkbox" id="inflationToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Overlay presidential terms</span>
+                    <label class="switch">
+                        <input type="checkbox" id="presidencyToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Overlay House/Senate control</span>
+                    <label class="switch">
+                        <input type="checkbox" id="congressToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Overlay U.S. registered vehicles</span>
+                    <label class="switch">
+                        <input type="checkbox" id="vehiclesToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
         </div>
 
-        <div id="chart-container"><canvas id="gasChart"></canvas></div>
+        <div id="range-slider"></div>
+        <div class="date-display" id="date-range-text">Loading timeline…</div>
+    </section>
+
+    <section class="analytics" id="factsSection" hidden>
+        <div class="facts-column">
+            <div class="section-title">
+                <div>
+                    <h2>Fact Check</h2>
+                    <p>These cards update with the selected range, so you can compare narratives against the actual window.</p>
+                </div>
+                <div class="status-inline" id="windowStatus">Waiting for selection…</div>
+            </div>
+            <div class="fact-list" id="factList">
+                <article class="fact-card">
+                    <div class="insight-kicker">Loading</div>
+                    <strong>Pulling in the historical series.</strong>
+                    <p>The fact cards will populate as soon as the data is available.</p>
+                </article>
+            </div>
+        </div>
+
+        <div class="selection-column">
+            <div class="section-title">
+                <div>
+                    <h2>Selection Snapshot</h2>
+                    <p>Numeric readout for the exact time window currently on screen.</p>
+                </div>
+            </div>
+            <div class="selection-grid">
+                <div class="selection-stat">
+                    <span>Window start</span>
+                    <strong id="windowStartValue">--</strong>
+                </div>
+                <div class="selection-stat">
+                    <span>Window end</span>
+                    <strong id="windowEndValue">--</strong>
+                </div>
+                <div class="selection-stat">
+                    <span>Nominal change</span>
+                    <strong id="windowNominalChange">--</strong>
+                </div>
+                <div class="selection-stat">
+                    <span>Real change</span>
+                    <strong id="windowRealChange">--</strong>
+                </div>
+                <div class="selection-stat">
+                    <span>Window average</span>
+                    <strong id="windowAverage">--</strong>
+                </div>
+                <div class="selection-stat">
+                    <span>Peak week in window</span>
+                    <strong id="windowPeak">--</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="footer-note">
+        Inflation overlay uses broad, stepped year multipliers as a quick fact-check aid, not a formal CPI calculator.
     </div>
+</div>
 
-    <script>
-        const API_KEY = "8oHafsKfGDzUbv0dKHA2MPHESi4GmRpBkZ31lZIf";
-        let rawData = [];
-        let chartInstance = null;
+<script>
+const API_KEY = "8oHafsKfGDzUbv0dKHA2MPHESi4GmRpBkZ31lZIf";
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-        // Cumulative Inflation Multipliers (Reference Year: 2026)
-        // Formulas based on CPI-U historical ratios
-        const getMultiplier = (year) => {
-            if (year >= 2025) return 1.0;
-            if (year >= 2022) return 1.15; // 2022 prices are ~15% cheaper than 2026 dollars
-            if (year >= 2016) return 1.35; 
-            if (year >= 2012) return 1.48; 
-            if (year >= 2008) return 1.55; // $1 in 2008 ≈ $1.55 in 2026
-            return 1.8; // Rough estimate for early 2000s
-        };
+const PARTY_COLORS = {
+    D: "rgba(75, 140, 255, 0.18)",
+    R: "rgba(241, 101, 101, 0.18)",
+    OTHER: "rgba(166, 184, 175, 0.2)"
+};
 
-        async function init() {
-            const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${API_KEY}&frequency=weekly&data[0]=value&facets[series][]=EMM_EPM0_PTE_NUS_DPG&sort[0][column]=period&sort[0][direction]=desc&length=800`;
-            const res = await fetch(url);
-            const json = await res.json();
-            rawData = json.response.data;
-            updateDisplay();
-        }
+const PRESIDENTIAL_TERMS = [
+    { start: "1977-01-20", end: "1981-01-20", name: "Jimmy Carter", party: "D" },
+    { start: "1981-01-20", end: "1989-01-20", name: "Ronald Reagan", party: "R" },
+    { start: "1989-01-20", end: "1993-01-20", name: "George H.W. Bush", party: "R" },
+    { start: "1993-01-20", end: "2001-01-20", name: "Bill Clinton", party: "D" },
+    { start: "2001-01-20", end: "2009-01-20", name: "George W. Bush", party: "R" },
+    { start: "2009-01-20", end: "2017-01-20", name: "Barack Obama", party: "D" },
+    { start: "2017-01-20", end: "2021-01-20", name: "Donald Trump", party: "R" },
+    { start: "2021-01-20", end: "2025-01-20", name: "Joe Biden", party: "D" },
+    { start: "2025-01-20", end: "2029-01-20", name: "Donald Trump", party: "R" }
+].map((term) => ({
+    ...term,
+    startDate: new Date(term.start),
+    endDate: new Date(term.end)
+}));
 
-        function updateDisplay() {
-            const isAdjusted = document.getElementById('inflation-toggle').checked;
-            
-            const processPrice = (item) => {
-                const year = parseInt(item.period.substring(0,4));
-                return isAdjusted ? item.value * getMultiplier(year) : item.value;
-            };
+const CONGRESSIONAL_CONTROL = [
+    { start: "1977-01-03", end: "1981-01-03", house: "D", senate: "D" },
+    { start: "1981-01-03", end: "1987-01-03", house: "D", senate: "R" },
+    { start: "1987-01-03", end: "1995-01-03", house: "D", senate: "D" },
+    { start: "1995-01-03", end: "2001-01-03", house: "R", senate: "R" },
+    { start: "2001-01-03", end: "2001-06-06", house: "R", senate: "R" },
+    { start: "2001-06-06", end: "2003-01-03", house: "R", senate: "D" },
+    { start: "2003-01-03", end: "2007-01-03", house: "R", senate: "R" },
+    { start: "2007-01-03", end: "2011-01-03", house: "D", senate: "D" },
+    { start: "2011-01-03", end: "2015-01-03", house: "R", senate: "D" },
+    { start: "2015-01-03", end: "2019-01-03", house: "R", senate: "R" },
+    { start: "2019-01-03", end: "2021-01-03", house: "D", senate: "R" },
+    { start: "2021-01-03", end: "2023-01-03", house: "D", senate: "D" },
+    { start: "2023-01-03", end: "2025-01-03", house: "R", senate: "D" },
+    { start: "2025-01-03", end: "2027-01-03", house: "R", senate: "R" }
+].map((period) => ({
+    ...period,
+    startDate: new Date(period.start),
+    endDate: new Date(period.end)
+}));
 
-            document.getElementById('p-now').innerText = `$${processPrice(rawData[0]).toFixed(2)}`;
-            document.getElementById('p-1y').innerText = `$${processPrice(rawData[52]).toFixed(2)}`;
-            document.getElementById('p-5y').innerText = `$${processPrice(rawData[260]).toFixed(2)}`;
-            document.getElementById('p-10y').innerText = `$${processPrice(rawData[520]).toFixed(2)}`;
+const US_REGISTERED_VEHICLES = [
+    { year: 2011, vehicles: 118455587 },
+    { year: 2012, vehicles: 133130032 },
+    { year: 2013, vehicles: 132931241 },
+    { year: 2014, vehicles: 137162349 },
+    { year: 2015, vehicles: 141256148 },
+    { year: 2016, vehicles: 146182276 },
+    { year: 2017, vehicles: 151605434 },
+    { year: 2018, vehicles: 152701631 },
+    { year: 2019, vehicles: 158352117 },
+    { year: 2020, vehicles: 161443328 },
+    { year: 2021, vehicles: 168092818 },
+    { year: 2022, vehicles: 172364078 },
+    { year: 2023, vehicles: 177228271 },
+    { year: 2024, vehicles: 189754931 }
+].map((point) => ({
+    t: new Date(`${point.year}-07-01`),
+    y: point.vehicles,
+    source: "fhwa-annual-registered-vehicles"
+}));
 
-            renderChart(isAdjusted);
-        }
+const state = {
+    allData: [],
+    chart: null,
+    slider: null,
+    selectedStart: null,
+    selectedEnd: null,
+    installPrompt: null,
+    selectedPreset: null,
+    showPresidentialOverlay: false,
+    showCongressOverlay: false,
+    showVehiclesOverlay: false,
+    blendBoundaries: {
+        monthlyToWeekly: null,
+        regularToTotal: null
+    }
+};
 
-        function renderChart(isAdjusted) {
-            const ctx = document.getElementById('gasChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
+const blendMarkerPlugin = {
+    id: "blendMarkers",
+    afterDatasetsDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        const xScale = scales.x;
+        if (!xScale || !chartArea) return;
 
-            const displayData = [...rawData].reverse().map(d => ({
-                x: d.period,
-                y: isAdjusted ? d.value * getMultiplier(parseInt(d.period.substring(0,4))) : d.value
-            }));
+        const markers = [
+            { date: state.blendBoundaries.monthlyToWeekly, label: "Weekly starts" },
+            { date: state.blendBoundaries.regularToTotal, label: "Total weekly starts" }
+        ].filter((item) => item.date instanceof Date && !Number.isNaN(item.date.getTime()));
 
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: displayData.map(d => d.x),
-                    datasets: [{
-                        label: isAdjusted ? 'Price in 2026 Dollars' : 'Actual Price Paid',
-                        data: displayData.map(d => d.y),
-                        borderColor: '#2563eb',
-                        tension: 0.2,
-                        pointRadius: 0,
-                        fill: true,
-                        backgroundColor: 'rgba(37, 99, 235, 0.05)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { ticks: { callback: v => '$' + v.toFixed(2) } } }
+        markers.forEach((marker) => {
+            const ms = marker.date.getTime();
+            if (ms < xScale.min || ms > xScale.max) return;
+
+            const x = xScale.getPixelForValue(marker.date);
+            if (x < chartArea.left || x > chartArea.right) return;
+
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.fillStyle = "rgba(237, 248, 244, 0.88)";
+            ctx.font = "500 10px 'IBM Plex Mono', monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(marker.label, Math.min(x + 5, chartArea.right - 92), chartArea.top + 20);
+            ctx.restore();
+        });
+    }
+};
+
+const governanceOverlayPlugin = {
+    id: "governanceOverlay",
+    beforeDatasetsDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        const xScale = scales.x;
+        if (!xScale || !chartArea) return;
+
+        const visibleMin = xScale.min;
+        const visibleMax = xScale.max;
+        const laneHeight = 24;
+
+        const intersects = (startMs, endMs) => endMs >= visibleMin && startMs <= visibleMax;
+        const getLeft = (date) => Math.max(chartArea.left, xScale.getPixelForValue(date));
+        const getRight = (date) => Math.min(chartArea.right, xScale.getPixelForValue(date));
+
+        ctx.save();
+
+        if (state.showPresidentialOverlay) {
+            PRESIDENTIAL_TERMS.forEach((term) => {
+                const startMs = term.startDate.getTime();
+                const endMs = term.endDate.getTime();
+                if (!intersects(startMs, endMs)) return;
+
+                const left = getLeft(term.startDate);
+                const right = getRight(term.endDate);
+                const width = right - left;
+                if (width <= 2) return;
+
+                ctx.fillStyle = PARTY_COLORS[term.party] || PARTY_COLORS.OTHER;
+                ctx.fillRect(left, chartArea.top, width, chartArea.bottom - chartArea.top);
+
+                if (width > 70) {
+                    ctx.fillStyle = "rgba(237, 248, 244, 0.8)";
+                    ctx.font = "600 11px 'IBM Plex Mono', monospace";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "top";
+                    ctx.fillText(term.name, left + (width / 2), chartArea.top + 6);
                 }
             });
         }
 
-        document.getElementById('inflation-toggle').addEventListener('change', updateDisplay);
-        init();
-    </script>
+        if (state.showCongressOverlay) {
+            CONGRESSIONAL_CONTROL.forEach((period) => {
+                const startMs = period.startDate.getTime();
+                const endMs = period.endDate.getTime();
+                if (!intersects(startMs, endMs)) return;
+
+                const left = getLeft(period.startDate);
+                const right = getRight(period.endDate);
+                const width = right - left;
+                if (width <= 2) return;
+
+                const top = chartArea.bottom - laneHeight;
+                const half = Math.floor(laneHeight / 2);
+                ctx.fillStyle = PARTY_COLORS[period.house] || PARTY_COLORS.OTHER;
+                ctx.fillRect(left, top, width, half);
+                ctx.fillStyle = PARTY_COLORS[period.senate] || PARTY_COLORS.OTHER;
+                ctx.fillRect(left, top + half, width, laneHeight - half);
+
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(left, top, width, laneHeight);
+
+                if (width > 95) {
+                    ctx.fillStyle = "rgba(237, 248, 244, 0.84)";
+                    ctx.font = "500 10px 'IBM Plex Mono', monospace";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(`H:${period.house} S:${period.senate}`, left + (width / 2), top + (laneHeight / 2));
+                }
+            });
+        }
+
+        ctx.restore();
+    }
+};
+
+Chart.register(governanceOverlayPlugin, blendMarkerPlugin);
+
+const getInflationFactor = (year) => {
+    if (year >= 2025) return 1.0;
+    if (year >= 2020) return 1.28;
+    if (year >= 2010) return 1.51;
+    if (year >= 2000) return 1.88;
+    if (year >= 1990) return 2.45;
+    if (year >= 1980) return 3.1;
+    return 4.0;
+};
+
+function formatCurrency(value) {
+    if (!Number.isFinite(value)) return "--";
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
+function formatSignedCurrency(value) {
+    if (!Number.isFinite(value)) return "--";
+    const sign = value > 0 ? "+" : "";
+    return `${sign}${formatCurrency(value)}`;
+}
+
+function formatPercent(value) {
+    if (!Number.isFinite(value)) return "--";
+    const sign = value > 0 ? "+" : "";
+    return `${sign}${value.toFixed(1)}%`;
+}
+
+function formatDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "--";
+    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatCompactDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "--";
+    return date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+}
+
+function average(values) {
+    if (!values.length) return NaN;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function percentChange(start, end) {
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start === 0) return NaN;
+    return ((end - start) / start) * 100;
+}
+
+function findExtreme(data, field, direction) {
+    if (!data.length) return null;
+    return data.reduce((best, item) => {
+        if (!best) return item;
+        return direction === "max"
+            ? (item[field] > best[field] ? item : best)
+            : (item[field] < best[field] ? item : best);
+    }, null);
+}
+
+function getFilteredData() {
+    return state.allData.filter((point) => {
+        if (state.selectedStart && point.t < state.selectedStart) return false;
+        if (state.selectedEnd && point.t > state.selectedEnd) return false;
+        return true;
+    });
+}
+
+function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+}
+
+function setStatus(text, isError = false) {
+    setText("statusMeta", `Status: ${text}`);
+    const inlineIds = ["chartStatus", "windowStatus"];
+    inlineIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.classList.toggle("error", isError);
+    });
+}
+
+function buildFactCards(filtered) {
+    const container = document.getElementById("factList");
+    if (!container || !filtered.length) return;
+
+    const first = filtered[0];
+    const last = filtered[filtered.length - 1];
+    const windowHigh = findExtreme(filtered, "y", "max");
+    const windowLow = findExtreme(filtered, "y", "min");
+    const nominalPct = percentChange(first.y, last.y);
+    const realPct = percentChange(first.yAdj, last.yAdj);
+    const spread = windowHigh && windowLow ? windowHigh.y - windowLow.y : NaN;
+
+    const facts = [
+        {
+            kicker: "Window Verdict",
+            headline: Number.isFinite(realPct) && realPct > 0
+                ? `Gas ended this window ${formatPercent(realPct)} higher in real terms.`
+                : `Gas ended this window ${formatPercent(realPct)} lower in real terms.`,
+            detail: `Cash-price change: ${formatPercent(nominalPct)}. Start: ${formatCurrency(first.y)} on ${formatDate(first.t)}. End: ${formatCurrency(last.y)} on ${formatDate(last.t)}.`
+        },
+        {
+            kicker: "Pressure Range",
+            headline: Number.isFinite(spread)
+                ? `${formatCurrency(spread)} separates the cheapest and priciest week in this selection.`
+                : "The selected window is too narrow for a spread comparison.",
+            detail: windowHigh && windowLow
+                ? `Peak week: ${formatCurrency(windowHigh.y)} in ${formatCompactDate(windowHigh.t)}. Floor: ${formatCurrency(windowLow.y)} in ${formatCompactDate(windowLow.t)}.`
+                : "Expand the window to compare highs and lows."
+        },
+        {
+            kicker: "Narrative Check",
+            headline: Number.isFinite(realPct) && Number.isFinite(nominalPct) && Math.abs(realPct - nominalPct) > 8
+                ? "Inflation meaningfully changes the story in this range."
+                : "Inflation adjustment does not radically change the story in this range.",
+            detail: `Nominal vs real gap: ${formatPercent((nominalPct || 0) - (realPct || 0))}. Use the overlay when someone is comparing sticker shock across different decades.`
+        }
+    ];
+
+    container.innerHTML = facts.map((fact) => `
+        <article class="fact-card">
+            <div class="insight-kicker">${fact.kicker}</div>
+            <strong>${fact.headline}</strong>
+            <p>${fact.detail}</p>
+        </article>
+    `).join("");
+}
+
+function updateSummary(filtered) {
+    if (!filtered.length) return;
+
+    const latest = state.allData[state.allData.length - 1];
+    const nominalPeak = findExtreme(state.allData, "y", "max");
+    const nominalLow = findExtreme(state.allData, "y", "min");
+    const first = filtered[0];
+    const last = filtered[filtered.length - 1];
+    const windowPeak = findExtreme(filtered, "y", "max");
+    const windowAverage = average(filtered.map((point) => point.y));
+
+    setText("headlinePrice", formatCurrency(latest.y));
+    setText("headlineSubcopy", `Week of ${formatDate(latest.t)}. The current sticker price is the last published weekly national average.`);
+    setText("headlineAdjusted", formatCurrency(latest.yAdj));
+    setText("headlineAdjustedNote", `Approx. ${formatCurrency(latest.yAdj)} in April 2026 buying power.`);
+
+    setText("allTimePeak", formatCurrency(nominalPeak.y));
+    setText("allTimePeakNote", `${formatDate(nominalPeak.t)} was the nominal high-water mark in this dataset.`);
+    setText("allTimeLow", formatCurrency(nominalLow.y));
+    setText("allTimeLowNote", `${formatDate(nominalLow.t)} was the cheapest observed week in this dataset.`);
+
+    setText("windowStartValue", `${formatCurrency(first.y)} · ${formatCompactDate(first.t)}`);
+    setText("windowEndValue", `${formatCurrency(last.y)} · ${formatCompactDate(last.t)}`);
+    setText("windowNominalChange", `${formatSignedCurrency(last.y - first.y)} · ${formatPercent(percentChange(first.y, last.y))}`);
+    setText("windowRealChange", `${formatSignedCurrency(last.yAdj - first.yAdj)} · ${formatPercent(percentChange(first.yAdj, last.yAdj))}`);
+    setText("windowAverage", formatCurrency(windowAverage));
+    setText("windowPeak", `${formatCurrency(windowPeak.y)} · ${formatCompactDate(windowPeak.t)}`);
+
+    const windowYears = Math.max(1, Math.round((last.t - first.t) / (365 * 24 * 60 * 60 * 1000)));
+    setText("coverageMeta", `Coverage: ${formatCompactDate(state.allData[0].t)} to ${formatCompactDate(latest.t)}`);
+    setText("date-range-text", `${formatDate(first.t)} to ${formatDate(last.t)} · roughly ${windowYears} year${windowYears === 1 ? "" : "s"}`);
+}
+
+function updateChart() {
+    const filtered = getFilteredData();
+    if (!filtered.length) return;
+
+    updateSummary(filtered);
+    buildFactCards(filtered);
+
+    const showAdjusted = document.getElementById("inflationToggle").checked;
+    const datasets = [{
+        label: "Pump price",
+        data: filtered.map((point) => ({ x: point.t, y: point.y })),
+        borderColor: "#58d0b3",
+        backgroundColor: "rgba(88, 208, 179, 0.16)",
+        borderWidth: 3,
+        pointRadius: 0,
+        tension: 0.22,
+        fill: true
+    }];
+
+    if (showAdjusted) {
+        datasets.push({
+            label: "Approx. April 2026 dollars",
+            data: filtered.map((point) => ({ x: point.t, y: point.yAdj })),
+            borderColor: "#ffb449",
+            borderWidth: 2,
+            borderDash: [8, 6],
+            pointRadius: 0,
+            tension: 0.2,
+            fill: false
+        });
+    }
+
+    if (state.showVehiclesOverlay) {
+        const vehiclePoints = US_REGISTERED_VEHICLES
+            .filter((point) => point.t >= filtered[0].t && point.t <= filtered[filtered.length - 1].t)
+            .map((point) => ({ x: point.t, y: point.y, source: point.source }));
+
+        if (vehiclePoints.length) {
+            datasets.push({
+                label: "U.S. registered vehicles",
+                data: vehiclePoints,
+                borderColor: "#7ab6ff",
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y1"
+            });
+        }
+    }
+
+    const minDate = filtered[0].t;
+    const maxDate = filtered[filtered.length - 1].t;
+
+    if (state.chart) {
+        state.chart.data.datasets = datasets;
+        state.chart.options.scales.x.min = minDate;
+        state.chart.options.scales.x.max = maxDate;
+        state.chart.update("none");
+    } else {
+        const ctx = document.getElementById("mainChart").getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 420);
+        gradient.addColorStop(0, "rgba(58, 143, 221, 0.28)");
+        gradient.addColorStop(1, "rgba(58, 143, 221, 0)");
+        datasets[0].backgroundColor = gradient;
+
+        state.chart = new Chart(ctx, {
+            type: "line",
+            data: { datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        type: "time",
+                        min: minDate,
+                        max: maxDate,
+                        time: { unit: "year" },
+                        grid: { color: "rgba(255,255,255,0.08)" },
+                        ticks: { color: "#9ab8af" }
+                    },
+                    y: {
+                        grid: { color: "rgba(255,255,255,0.08)" },
+                        ticks: {
+                            color: "#9ab8af",
+                            callback: (value) => formatCurrency(Number(value))
+                        }
+                    },
+                    y1: {
+                        position: "right",
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: "#9ab8af",
+                            callback: (value) => `${(Number(value) / 1000000).toFixed(0)}M`
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "#edf8f4",
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            boxHeight: 8
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: "rgba(4, 15, 12, 0.95)",
+                        borderColor: "rgba(255,255,255,0.12)",
+                        borderWidth: 1,
+                        callbacks: {
+                            title: (items) => formatDate(new Date(items[0].parsed.x)),
+                            label: (context) => {
+                                if (context.dataset.label === "U.S. registered vehicles") {
+                                    return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString()}`;
+                                }
+                                return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                            },
+                            footer: (items) => {
+                                if (items?.[0]?.dataset?.label === "U.S. registered vehicles") {
+                                    const value = items?.[0]?.parsed?.y;
+                                    return `FHWA annual count: ${Number(value).toLocaleString()} vehicles`;
+                                }
+                                const source = items?.[0]?.raw?.source;
+                                if (source === "monthly-total-pta") return "Source granularity: monthly";
+                                if (source === "weekly-regular") return "Source granularity: weekly (regular)";
+                                if (source === "weekly-total") return "Source granularity: weekly (total)";
+                                return "";
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    setStatus(`Showing ${filtered.length.toLocaleString()} weekly readings`);
+    const narrativeParts = [];
+    narrativeParts.push(showAdjusted
+        ? "Nominal and inflation-adjusted views are both active."
+        : "Nominal prices are in focus.");
+    if (state.showVehiclesOverlay) {
+        narrativeParts.push("Vehicle overlay is on (FHWA annual U.S. registered vehicles, 2011+). Right axis shows vehicle counts.");
+    } else {
+        narrativeParts.push("Turn on vehicle overlay to compare gas prices with registered vehicle growth.");
+    }
+    setText("chartNarrative", narrativeParts.join(" "));
+}
+
+function initSlider() {
+    const sliderElement = document.getElementById("range-slider");
+    const first = state.allData[0];
+    const last = state.allData[state.allData.length - 1];
+
+    noUiSlider.create(sliderElement, {
+        start: [first.t.getTime(), last.t.getTime()],
+        connect: true,
+        range: { min: first.t.getTime(), max: last.t.getTime() },
+        step: WEEK_MS
+    });
+
+    state.slider = sliderElement.noUiSlider;
+    state.slider.on("start", () => {
+        state.selectedPreset = null;
+        syncActiveRangePill();
+    });
+    state.slider.on("update", (values) => {
+        state.selectedStart = new Date(Number(values[0]));
+        state.selectedEnd = new Date(Number(values[1]));
+        updateChart();
+        syncActiveRangePill();
+    });
+}
+
+function syncActiveRangePill() {
+    const buttons = document.querySelectorAll(".range-pill");
+    buttons.forEach((button) => {
+        const years = Number(button.dataset.years || 0);
+        const isFull = button.dataset.mode === "full";
+        const isActive = (years && state.selectedPreset === `years:${years}`)
+            || (isFull && state.selectedPreset === "full");
+        button.classList.toggle("active", Boolean(isActive));
+    });
+}
+
+function applyYearsRange(years) {
+    if (!state.slider || !state.allData.length) return;
+    state.selectedPreset = `years:${years}`;
+    const end = state.allData[state.allData.length - 1].t;
+    const start = new Date(end);
+    start.setFullYear(end.getFullYear() - years);
+
+    const minAllowed = state.allData[0].t.getTime();
+    state.slider.set([
+        Math.max(start.getTime(), minAllowed),
+        end.getTime()
+    ]);
+}
+
+function applyFullRange() {
+    if (!state.slider || !state.allData.length) return;
+    state.selectedPreset = "full";
+    state.slider.set([
+        state.allData[0].t.getTime(),
+        state.allData[state.allData.length - 1].t.getTime()
+    ]);
+}
+
+function normalizeSeriesRows(rows, sourceLabel) {
+    return (rows || [])
+        .map((row) => ({
+            t: new Date(row.period),
+            y: Number.parseFloat(row.value),
+            source: sourceLabel
+        }))
+        .filter((point) => Number.isFinite(point.t.getTime()) && Number.isFinite(point.y))
+        .sort((a, b) => a.t - b.t);
+}
+
+function buildBlendedSeries(totalWeekly, regularWeekly, monthlyLegacy) {
+    if (!totalWeekly.length || !regularWeekly.length) return [];
+    const earliestTotal = totalWeekly[0].t.getTime();
+    const earliestRegular = regularWeekly[0].t.getTime();
+
+    const preTotalRegular = regularWeekly.filter((point) => point.t.getTime() < earliestTotal);
+    const preWeeklyMonthly = monthlyLegacy.filter((point) => point.t.getTime() < earliestRegular);
+    const blended = [...preWeeklyMonthly, ...preTotalRegular, ...totalWeekly];
+
+    state.blendBoundaries.monthlyToWeekly = new Date(earliestRegular);
+    state.blendBoundaries.regularToTotal = new Date(earliestTotal);
+
+    return blended.map((point) => ({
+        ...point,
+        yAdj: point.y * getInflationFactor(point.t.getFullYear())
+    }));
+}
+
+async function fetchData() {
+    const totalGasWeeklyUrl = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${API_KEY}&frequency=weekly&data[0]=value&facets[series][]=EMM_EPM0_PTE_NUS_DPG&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
+    const regularGasWeeklyUrl = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${API_KEY}&frequency=weekly&data[0]=value&facets[series][]=EMM_EPMR_PTE_NUS_DPG&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
+    const legacyMonthlyUrl = `https://api.eia.gov/v2/petroleum/pri/allmg/data/?api_key=${API_KEY}&frequency=monthly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPM0&facets[process][]=PTA&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
+
+    try {
+        const [totalResponse, regularResponse, legacyResponse] = await Promise.all([
+            fetch(totalGasWeeklyUrl),
+            fetch(regularGasWeeklyUrl),
+            fetch(legacyMonthlyUrl)
+        ]);
+
+        const totalPayload = await totalResponse.json();
+        const regularPayload = await regularResponse.json();
+        const legacyPayload = await legacyResponse.json();
+        const totalRows = totalPayload?.response?.data;
+        const regularRows = regularPayload?.response?.data;
+        const legacyRows = legacyPayload?.response?.data;
+
+        if (!Array.isArray(totalRows) || !totalRows.length) {
+            throw new Error("No total-gas weekly data returned from EIA");
+        }
+        if (!Array.isArray(regularRows) || !regularRows.length) {
+            throw new Error("No regular-gas weekly data returned from EIA");
+        }
+
+        const totalWeekly = normalizeSeriesRows(totalRows, "weekly-total");
+        const regularWeekly = normalizeSeriesRows(regularRows, "weekly-regular");
+        const legacyMonthly = normalizeSeriesRows(legacyRows, "monthly-total-pta");
+        state.allData = buildBlendedSeries(totalWeekly, regularWeekly, legacyMonthly);
+
+        if (!state.allData.length) {
+            throw new Error("The dataset contained no valid price points");
+        }
+
+        setText("seriesMeta", "Source: EIA blended history (Monthly 1983+, Weekly 1990+, Total weekly 1993+)");
+
+        initSlider();
+        applyFullRange();
+        setStatus("Data loaded");
+    } catch (error) {
+        setStatus(`Data error: ${error.message}`, true);
+        setText("date-range-text", "Failed to load gas history. Check API availability or key validity.");
+        setText("chartStatus", "Chart unavailable");
+        setText("windowStatus", "Facts unavailable");
+        setText("statusMeta", `Status: ${error.message}`);
+    }
+}
+
+function wireInteractions() {
+    document.getElementById("inflationToggle").addEventListener("change", updateChart);
+    document.getElementById("presidencyToggle").addEventListener("change", (event) => {
+        state.showPresidentialOverlay = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("congressToggle").addEventListener("change", (event) => {
+        state.showCongressOverlay = event.target.checked;
+        updateChart();
+    });
+
+    const factsSection = document.getElementById("factsSection");
+    document.getElementById("jumpToFactsButton").addEventListener("click", () => {
+        const shouldShow = factsSection.hidden;
+        factsSection.hidden = !shouldShow;
+        const factsButton = document.getElementById("jumpToFactsButton");
+        factsButton.setAttribute("aria-expanded", String(shouldShow));
+        factsButton.textContent = shouldShow ? "Hide Facts" : "Show Facts";
+
+        if (shouldShow) {
+            factsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    });
+
+    document.getElementById("vehiclesToggle").addEventListener("change", (event) => {
+        state.showVehiclesOverlay = event.target.checked;
+        updateChart();
+    });
+
+    document.getElementById("rangePills").addEventListener("click", (event) => {
+        const button = event.target.closest(".range-pill");
+        if (!button) return;
+        const years = Number(button.dataset.years || 0);
+        if (years) {
+            applyYearsRange(years);
+            return;
+        }
+        if (button.dataset.mode === "full") {
+            applyFullRange();
+        }
+    });
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        state.installPrompt = event;
+        const installButton = document.getElementById("installButton");
+        installButton.hidden = false;
+        installButton.disabled = false;
+    });
+
+    document.getElementById("installButton").addEventListener("click", async () => {
+        if (!state.installPrompt) return;
+        state.installPrompt.prompt();
+        await state.installPrompt.userChoice;
+        state.installPrompt = null;
+        document.getElementById("installButton").hidden = true;
+    });
+
+    if ("serviceWorker" in navigator && window.location.protocol.startsWith("http")) {
+        navigator.serviceWorker.register("./sw.js").catch(() => {
+            setText("statusMeta", "Status: data loaded, service worker registration skipped");
+        });
+    }
+}
+
+wireInteractions();
+fetchData();
+</script>
 </body>
 </html>

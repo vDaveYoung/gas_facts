@@ -1,0 +1,12 @@
+{
+  "name": "Gas Facts",
+  "short_name": "GasFacts",
+  "description": "Fact-check gas price claims with long-run weekly history and a quick inflation-adjusted view.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071512",
+  "theme_color": "#10322a",
+  "categories": ["finance", "utilities", "news"],
+  "lang": "en-US"
+}
