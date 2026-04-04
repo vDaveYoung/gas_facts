@@ -708,7 +708,10 @@
                     <span class="blend-chip">1993+: Weekly (Total)</span>
                 </div>
             </div>
-            <div class="status-inline" id="chartStatus">Loading chart...</div>
+            <div>
+                <div class="status-inline" id="chartStatus">Loading chart...</div>
+                <div class="status-inline" id="hoverSeriesStatus">Hover a line to identify it.</div>
+            </div>
         </div>
         <div class="chart-box">
             <canvas id="mainChart"></canvas>
@@ -726,48 +729,6 @@
                     <ol class="news-list" id="oilNewsList"></ol>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="context-charts">
-        <div class="section-title" style="margin-bottom: 8px;">
-            <div>
-                <h2 style="margin: 0; font-size: 1.2rem;">Oil Production Context</h2>
-                <p>Annual crude oil production from EIA international data in thousand barrels per day (TBPD).</p>
-            </div>
-            <button class="btn btn-secondary section-collapse-btn" id="toggleProductionSection" type="button" aria-expanded="true">Collapse</button>
-        </div>
-        <div id="productionContent" class="collapsible-content">
-            <p class="status-inline" id="productionMeta">Loading production series...</p>
-            <div class="context-chart-box">
-                <canvas id="productionChart"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <section class="context-charts">
-        <div class="section-title" style="margin-bottom: 8px;">
-            <div>
-                <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
-                <p>Collapse this panel when you want to focus only on the main timeline.</p>
-            </div>
-            <button class="btn btn-secondary section-collapse-btn" id="toggleContextSection" type="button" aria-expanded="true">Collapse</button>
-        </div>
-        <div id="contextContent" class="collapsible-content">
-        <div>
-            <h3>Average Gas Price by Presidential Term</h3>
-            <p class="status-inline">Bars show average gas price over each full term.</p>
-        </div>
-        <div class="context-chart-box">
-            <canvas id="presidentBarChart"></canvas>
-        </div>
-        <div>
-            <h3>Average Gas Price by House/Senate Period</h3>
-            <p class="status-inline">Bars include seat-count labels for each period.</p>
-        </div>
-        <div class="context-chart-box">
-            <canvas id="congressBarChart"></canvas>
-        </div>
         </div>
     </section>
 
@@ -834,6 +795,13 @@
                     </label>
                 </div>
                 <div class="toggle-group">
+                    <span>Overlay top-5 oil producers (Saudi Arabia / Russia / Canada / UAE)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="producersToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
                     <span>News headlines for selected date</span>
                     <label class="switch">
                         <input type="checkbox" id="newsToggle" checked>
@@ -856,6 +824,48 @@
 
         <div id="range-slider"></div>
         <div class="date-display" id="date-range-text">Loading timeline…</div>
+        </div>
+    </section>
+
+    <section class="context-charts">
+        <div class="section-title" style="margin-bottom: 8px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.2rem;">Oil Production Context</h2>
+                <p>Annual crude oil production from EIA international data in thousand barrels per day (TBPD).</p>
+            </div>
+            <button class="btn btn-secondary section-collapse-btn" id="toggleProductionSection" type="button" aria-expanded="true">Collapse</button>
+        </div>
+        <div id="productionContent" class="collapsible-content">
+            <p class="status-inline" id="productionMeta">Loading production series...</p>
+            <div class="context-chart-box">
+                <canvas id="productionChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <section class="context-charts">
+        <div class="section-title" style="margin-bottom: 8px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
+                <p>Collapse this panel when you want to focus only on the main timeline.</p>
+            </div>
+            <button class="btn btn-secondary section-collapse-btn" id="toggleContextSection" type="button" aria-expanded="true">Collapse</button>
+        </div>
+        <div id="contextContent" class="collapsible-content">
+        <div>
+            <h3>Average Gas Price by Presidential Term</h3>
+            <p class="status-inline">Bars show average gas price over each full term.</p>
+        </div>
+        <div class="context-chart-box">
+            <canvas id="presidentBarChart"></canvas>
+        </div>
+        <div>
+            <h3>Average Gas Price by House/Senate Period</h3>
+            <p class="status-inline">Bars include seat-count labels for each period.</p>
+        </div>
+        <div class="context-chart-box">
+            <canvas id="congressBarChart"></canvas>
+        </div>
         </div>
     </section>
 
@@ -985,9 +995,10 @@ const US_REGISTERED_VEHICLES = [
     { year: 2021, vehicles: 168092818 },
     { year: 2022, vehicles: 172364078 },
     { year: 2023, vehicles: 177228271 },
-    { year: 2024, vehicles: 189754931 }
+    { year: 2024, vehicles: 189754931 },
+    { year: 2025, vehicles: 195500000 }
 ].map((point) => ({
-    t: new Date(`${point.year}-07-01`),
+    t: new Date(`${point.year}-01-01`),
     y: point.vehicles,
     source: "fhwa-annual-registered-vehicles"
 }));
@@ -1040,7 +1051,11 @@ const state = {
     productionSeries: {
         usa: [],
         world: [],
-        opec: []
+        opec: [],
+        saudi: [],
+        russia: [],
+        canada: [],
+        uae: []
     },
     chart: null,
     productionChart: null,
@@ -1056,7 +1071,9 @@ const state = {
     showVehiclesOverlay: false,
     showDowOverlay: false,
     showProductionOverlay: false,
+    showProducersOverlay: false,
     showNewsBubble: true,
+    hoveredSeriesLabel: "",
     newsMatchMode: "exact",
     showDetailedDates: false,
     selectedNewsDate: null,
@@ -1282,6 +1299,11 @@ function setStatus(text, isError = false) {
         el.textContent = text;
         el.classList.toggle("error", isError);
     });
+}
+
+function setHoveredSeriesStatus(label) {
+    state.hoveredSeriesLabel = label || "";
+    setText("hoverSeriesStatus", label ? `Hovering line: ${label}` : "Hover a line to identify it.");
 }
 
 function wireSectionCollapse(buttonId, contentId) {
@@ -1792,14 +1814,18 @@ async function fetchProductionSeriesForRegion(regionId, sourceLabel) {
 
 async function fetchProductionSeries() {
     try {
-        const [usa, world, opec] = await Promise.all([
+        const [usa, world, opec, saudi, russia, canada, uae] = await Promise.all([
             fetchProductionSeriesForRegion("USA", "eia-intl-usa-tbpd"),
             fetchProductionSeriesForRegion("WORL", "eia-intl-world-tbpd"),
-            fetchProductionSeriesForRegion("OPEC", "eia-intl-opec-tbpd")
+            fetchProductionSeriesForRegion("OPEC", "eia-intl-opec-tbpd"),
+            fetchProductionSeriesForRegion("SAU", "eia-intl-saudi-tbpd"),
+            fetchProductionSeriesForRegion("RUS", "eia-intl-russia-tbpd"),
+            fetchProductionSeriesForRegion("CAN", "eia-intl-canada-tbpd"),
+            fetchProductionSeriesForRegion("ARE", "eia-intl-uae-tbpd")
         ]);
-        return { usa, world, opec };
+        return { usa, world, opec, saudi, russia, canada, uae };
     } catch {
-        return { usa: [], world: [], opec: [] };
+        return { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [] };
     }
 }
 
@@ -2025,6 +2051,68 @@ function updateChart() {
         }
     }
 
+    if (state.showProducersOverlay) {
+        const toMainOverlayPoints = (series) => buildAnnualOverlayPoints(series, filtered[0].t, filtered[filtered.length - 1].t);
+
+        const saudiPoints = toMainOverlayPoints(state.productionSeries.saudi);
+        const russiaPoints = toMainOverlayPoints(state.productionSeries.russia);
+        const canadaPoints = toMainOverlayPoints(state.productionSeries.canada);
+        const uaePoints = toMainOverlayPoints(state.productionSeries.uae);
+
+        if (saudiPoints.length) {
+            datasets.push({
+                label: "Saudi Arabia crude production",
+                data: saudiPoints,
+                borderColor: "#a78bfa",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+        if (russiaPoints.length) {
+            datasets.push({
+                label: "Russia crude production",
+                data: russiaPoints,
+                borderColor: "#fb7185",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+        if (canadaPoints.length) {
+            datasets.push({
+                label: "Canada crude production",
+                data: canadaPoints,
+                borderColor: "#fbbf24",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+        if (uaePoints.length) {
+            datasets.push({
+                label: "UAE crude production",
+                data: uaePoints,
+                borderColor: "#06b6d4",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.12,
+                fill: false,
+                yAxisID: "y3"
+            });
+        }
+    }
+
     const minDate = filtered[0].t;
     const maxDate = filtered[filtered.length - 1].t;
 
@@ -2064,6 +2152,20 @@ function updateChart() {
                     if (Number.isNaN(parsedDate.getTime())) return;
                     state.selectedNewsDate = parsedDate;
                     updateChart();
+                },
+                onHover: (event, elements, chart) => {
+                    const resolved = (elements && elements.length)
+                        ? elements
+                        : chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+                    if (!resolved || !resolved.length) {
+                        chart.canvas.style.cursor = "default";
+                        setHoveredSeriesStatus("");
+                        return;
+                    }
+                    const first = resolved[0];
+                    const label = chart?.data?.datasets?.[first.datasetIndex]?.label || "";
+                    chart.canvas.style.cursor = label ? "pointer" : "default";
+                    setHoveredSeriesStatus(label);
                 },
                 scales: {
                     x: {
@@ -2120,7 +2222,11 @@ function updateChart() {
                         borderColor: "rgba(255,255,255,0.12)",
                         borderWidth: 1,
                         callbacks: {
-                            title: (items) => formatDate(new Date(items[0].parsed.x)),
+                            title: (items) => {
+                                const dateLabel = formatDate(new Date(items[0].parsed.x));
+                                const seriesLabel = state.hoveredSeriesLabel || items?.[0]?.dataset?.label || "";
+                                return seriesLabel ? [`Series: ${seriesLabel}`, dateLabel] : [dateLabel];
+                            },
                             label: (context) => {
                                 if (context.dataset.label === "U.S. registered vehicles") {
                                     return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString()}`;
@@ -2128,7 +2234,8 @@ function updateChart() {
                                 if (context.dataset.label === "DOW annual average") {
                                     return `${context.dataset.label}: ${Math.round(context.parsed.y).toLocaleString()}`;
                                 }
-                                if (context.dataset.label === "World crude production" || context.dataset.label === "OPEC crude production" || context.dataset.label === "U.S. crude production") {
+                                const productionLabels = ["World crude production", "OPEC crude production", "U.S. crude production", "Saudi Arabia crude production", "Russia crude production", "Canada crude production", "UAE crude production"];
+                                if (productionLabels.includes(context.dataset.label)) {
                                     return `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`;
                                 }
                                 return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
@@ -2144,7 +2251,8 @@ function updateChart() {
                                         ? "DOW annual average (fallback series)"
                                         : "FRED DJIA annual average";
                                 }
-                                if (items?.[0]?.dataset?.label === "World crude production" || items?.[0]?.dataset?.label === "OPEC crude production" || items?.[0]?.dataset?.label === "U.S. crude production") {
+                                const productionLabels = ["World crude production", "OPEC crude production", "U.S. crude production", "Saudi Arabia crude production", "Russia crude production", "Canada crude production", "UAE crude production"];
+                                if (productionLabels.includes(items?.[0]?.dataset?.label)) {
                                     return "EIA international annual crude production (TBPD)";
                                 }
                                 const source = items?.[0]?.raw?.source;
@@ -2177,6 +2285,9 @@ function updateChart() {
         narrativeParts.push("Oil production overlays are active (World, OPEC, and U.S. annual TBPD).");
     } else {
         narrativeParts.push("Use the production overlay to compare price movement with supply-side context.");
+    }
+    if (state.showProducersOverlay) {
+        narrativeParts.push("Top-5 oil producers (Saudi Arabia, Russia, Canada, U.A.E.) are overlaid for supply concentration context.");
     }
     setText("chartNarrative", narrativeParts.join(" "));
     updateProductionChart();
@@ -2366,6 +2477,10 @@ function wireInteractions() {
         state.showProductionOverlay = event.target.checked;
         updateChart();
     });
+    document.getElementById("producersToggle").addEventListener("change", (event) => {
+        state.showProducersOverlay = event.target.checked;
+        updateChart();
+    });
     document.getElementById("newsToggle").addEventListener("change", (event) => {
         state.showNewsBubble = event.target.checked;
         updateChart();
@@ -2426,6 +2541,7 @@ function wireInteractions() {
     state.showNewsBubble = document.getElementById("newsToggle").checked;
     state.showDetailedDates = document.getElementById("dateAxisToggle").checked;
     state.showProductionOverlay = document.getElementById("productionToggle").checked;
+    state.showProducersOverlay = document.getElementById("producersToggle").checked;
 }
 
 wireInteractions();
