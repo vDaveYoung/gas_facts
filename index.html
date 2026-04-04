@@ -1511,7 +1511,15 @@ function updateNewsHeadlinesPanel(filtered) {
         && state.selectedNewsDate.getTime() >= rangeStart
         && state.selectedNewsDate.getTime() <= rangeEnd;
 
-    const selectedDate = isSelectedInRange ? state.selectedNewsDate : filtered[filtered.length - 1].t;
+    if (!isSelectedInRange) {
+        setText("newsPanelMeta", "Select a date on the chart to load headlines for that exact date.");
+        worldList.innerHTML = "<li>No world headlines loaded. Select a chart date.</li>";
+        oilList.innerHTML = "<li>No oil/gas headlines loaded. Select a chart date.</li>";
+        panel.hidden = false;
+        return;
+    }
+
+    const selectedDate = state.selectedNewsDate;
     const nearestPoint = filtered.reduce((best, point) => {
         const diff = Math.abs(point.t.getTime() - selectedDate.getTime());
         if (!best || diff < best.diff) return { point, diff };
@@ -1522,27 +1530,24 @@ function updateNewsHeadlinesPanel(filtered) {
     const prior = selectedIndex > 0 ? filtered[Math.max(0, selectedIndex - 4)]?.y : filtered[0]?.y;
     const direction = Number.isFinite(prior) ? (current - prior > 0 ? "rising" : "falling") : "moving";
 
-    const nearest = NEWS_EVENTS
-        .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
-        .sort((a, b) => a.diff - b.diff)[0];
+    const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+    const exactMatches = NEWS_EVENTS.filter((event) => {
+        const eventKey = `${event.t.getFullYear()}-${String(event.t.getMonth() + 1).padStart(2, "0")}-${String(event.t.getDate()).padStart(2, "0")}`;
+        return eventKey === dateKey;
+    });
 
-    const sortedByDate = NEWS_EVENTS
-        .map((event) => ({ ...event, diff: Math.abs(event.t.getTime() - selectedDate.getTime()) }))
-        .sort((a, b) => a.diff - b.diff);
-    const worldHeadlines = sortedByDate.filter((item) => item.category === "world").slice(0, 4);
-    const oilHeadlines = sortedByDate.filter((item) => item.category === "oil").slice(0, 4);
+    const worldHeadlines = exactMatches.filter((item) => item.category === "world");
+    const oilHeadlines = exactMatches.filter((item) => item.category === "oil");
 
-    setText("newsPanelMeta", nearest
-        ? `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`
-        : `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
+    setText("newsPanelMeta", `Selected date: ${formatDate(selectedDate)}. Trend near date is ${direction}, gas at ${formatCurrency(current)}.`);
 
     worldList.innerHTML = worldHeadlines.length ? worldHeadlines.map((item) =>
         `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("") : `<li>No world headlines tagged near this date yet.</li>`;
+    ).join("") : `<li>No world headlines tagged for this selected date.</li>`;
 
     oilList.innerHTML = oilHeadlines.length ? oilHeadlines.map((item) =>
         `<li><strong>${formatDate(item.t)} - ${item.title}</strong><br>${item.detail}<br><a href="${item.link}" target="_blank" rel="noopener noreferrer">Reference link</a></li>`
-    ).join("") : `<li>No oil/gas headlines tagged near this date yet.</li>`;
+    ).join("") : `<li>No oil/gas headlines tagged for this selected date.</li>`;
 
     panel.hidden = false;
 }
