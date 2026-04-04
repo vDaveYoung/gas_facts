@@ -23,6 +23,15 @@ The main timeline supports these overlays:
 - Brent crude per-gallon equivalent (`Brent / 42`)
 - Oil production context overlays
 
+## Governance Context Timeline
+
+The governance section on the main page is now a single consolidated timeline instead of three separate charts.
+
+- President, Senate, and House share one aligned time axis.
+- The governance timeline follows the currently selected main-chart window.
+- Hovering a governance segment highlights the matching office period on the main Gas Price Timeline.
+- The standalone [politics.html](politics.html) page remains the full-history view beyond the oil-focused window.
+
 ### Crude per-gallon methodology
 
 - Source: FRED daily spot series (`DCOILWTICO` for WTI, `DCOILBRENTEU` for Brent)

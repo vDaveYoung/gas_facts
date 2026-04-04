@@ -620,46 +620,9 @@
             height: 72vh;
         }
 
-        .gov-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .gov-stack-row {
-            display: flex;
-            align-items: stretch;
-            gap: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-            padding-bottom: 6px;
-            margin-bottom: 6px;
-        }
-
-        .gov-stack-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-
-        .gov-stack-label {
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            transform: rotate(180deg);
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(154, 184, 175, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 20px;
-            width: 20px;
-            flex-shrink: 0;
-        }
-
-        .gov-stack .context-chart-box {
-            min-height: 200px;
-            height: 28vh;
+        .governance-context-box {
+            min-height: 360px;
+            height: 46vh;
         }
 
         .section-collapse-btn {
@@ -986,43 +949,19 @@
         <div class="section-title" style="margin-bottom: 8px;">
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Governance Context Charts</h2>
-                <p>Oil-linked political context stays on this page: President (4yr) · Senate (6yr) · House (2yr). <a href="politics.html" style="color:#9ab8af;">Open full political history →</a></p>
+                <p>Oil-linked political context stays on this page: one aligned timeline for President, Senate, and House. <a href="politics.html" style="color:#9ab8af;">Open full political history →</a></p>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleContextSection" type="button" aria-expanded="true">Collapse</button>
         </div>
         <div id="contextContent" class="collapsible-content">
-        <div class="gov-stack">
-            <div class="gov-stack-row">
-                <div class="gov-stack-label">President</div>
-                <div class="graph-bookend-wrap" style="flex:1; min-width:0;">
-                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                    <div class="context-chart-box" style="margin-top:0;">
-                        <canvas id="presidentBarChart"></canvas>
-                    </div>
-                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+            <p class="status-inline" id="governanceMeta">Loading aligned governance timeline...</p>
+            <div class="graph-bookend-wrap">
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                <div class="context-chart-box governance-context-box" style="margin-top:0;">
+                    <canvas id="governanceContextChart"></canvas>
                 </div>
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
             </div>
-            <div class="gov-stack-row">
-                <div class="gov-stack-label">Senate</div>
-                <div class="graph-bookend-wrap" style="flex:1; min-width:0;">
-                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                    <div class="context-chart-box" style="margin-top:0;">
-                        <canvas id="senateBarChart"></canvas>
-                    </div>
-                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                </div>
-            </div>
-            <div class="gov-stack-row">
-                <div class="gov-stack-label">House</div>
-                <div class="graph-bookend-wrap" style="flex:1; min-width:0;">
-                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                    <div class="context-chart-box" style="margin-top:0;">
-                        <canvas id="houseBarChart"></canvas>
-                    </div>
-                    <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                </div>
-            </div>
-        </div>
         </div>
     </section>
 
@@ -2138,110 +2077,187 @@ function makeBarChartOptions(rotationMin, rotationMax, titleTransform) {
     };
 }
 
+function buildGovernanceMetaText(rangeStart, rangeEnd) {
+    return `Aligned governance timeline for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Hover a segment to highlight the same office period on the main chart.`;
+}
+
 function updateContextCharts() {
-    const presidentCtx = document.getElementById("presidentBarChart")?.getContext("2d");
-    const senateCtx = document.getElementById("senateBarChart")?.getContext("2d");
-    const houseCtx = document.getElementById("houseBarChart")?.getContext("2d");
-    if (!presidentCtx) return;
+    const canvas = document.getElementById("governanceContextChart");
+    if (!canvas || !state.allData.length) return;
 
-    const presidentLabels = state.presidentTermAverages.map((item) => item.label);
-    const presidentValues = state.presidentTermAverages.map((item) => item.avg);
-    const presidentColors = state.presidentTermAverages.map((item) => PARTY_COLORS[item.party] || PARTY_COLORS.OTHER);
-    const presidentPeriods = state.presidentTermAverages.map((item) => ({
-        label: item.label,
-        start: item.start,
-        end: item.end
-    }));
+    const rangeStart = state.selectedStart || state.allData[0]?.t;
+    const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+    if (!(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return;
 
-    if (state.presidentBarChart) {
-        state.presidentBarChart.data.labels = presidentLabels;
-        state.presidentBarChart.data.datasets[0].data = presidentValues;
-        state.presidentBarChart.data.datasets[0].backgroundColor = presidentColors;
-        state.presidentBarChart.data.datasets[0].baseBackgroundColor = [...presidentColors];
-        state.presidentBarChart.update("none");
-    } else {
-        state.presidentBarChart = new Chart(presidentCtx, {
-            type: "bar",
-            data: { labels: presidentLabels, datasets: [{ label: "Avg gas price", data: presidentValues, backgroundColor: presidentColors, borderColor: "rgba(255,255,255,0.18)", borderWidth: 1 }] },
-            options: {
-                ...makeBarChartOptions(30, 60, null),
-                interaction: { mode: "nearest", intersect: true },
-                onHover: (event, elements, chart) => {
-                    const activeIndex = elements?.length ? elements[0].index : null;
-                    chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
-                    applyGovernanceChartHighlight(chart, activeIndex, presidentPeriods, "president");
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 800;
+    const height = canvas.clientHeight || 360;
+    canvas.width = Math.max(1, Math.round(width * dpr));
+    canvas.height = Math.max(1, Math.round(height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const labelWidth = 78;
+    const axisHeight = 30;
+    const rowGap = 8;
+    const contentHeight = height - axisHeight - 12;
+    const rowHeight = Math.max(58, Math.floor((contentHeight - rowGap * 2) / 3));
+    const chartLeft = labelWidth;
+    const chartRight = width - 8;
+    const chartWidth = Math.max(1, chartRight - chartLeft);
+    const startMs = rangeStart.getTime();
+    const endMs = rangeEnd.getTime();
+    const spanMs = Math.max(1, endMs - startMs);
+    const hover = state.governanceHover;
+    const xForDate = (date) => chartLeft + (((date.getTime() - startMs) / spanMs) * chartWidth);
+    const periodVisibleAvg = (startDate, endDate) => {
+        const clippedStart = new Date(Math.max(startDate.getTime(), startMs));
+        const clippedEnd = new Date(Math.min(endDate.getTime(), endMs));
+        return averageForRange(clippedStart, clippedEnd);
+    };
+    const rows = [
+        { office: "president", title: "President", items: PRESIDENTIAL_TERMS, y: 0, partyKey: "party", label: (item) => item.name },
+        { office: "senate", title: "Senate", items: SENATE_CONTROL_PERIODS, y: rowHeight + rowGap, partyKey: "senate", label: (item) => `S:${item.senateSeats}` },
+        { office: "house", title: "House", items: HOUSE_CONTROL_PERIODS, y: (rowHeight + rowGap) * 2, partyKey: "house", label: (item) => `H:${item.houseSeats}` }
+    ];
+
+    ctx.clearRect(0, 0, width, height);
+    canvas.$segments = [];
+
+    rows.forEach((row) => {
+        ctx.fillStyle = "rgba(255,255,255,0.03)";
+        ctx.fillRect(chartLeft, row.y, chartWidth, rowHeight);
+
+        ctx.fillStyle = "rgba(154, 184, 175, 0.7)";
+        ctx.font = "700 11px 'IBM Plex Mono', monospace";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(row.title, labelWidth - 12, row.y + rowHeight / 2);
+
+        row.items.forEach((item) => {
+            const itemStart = item.startDate || new Date(item.start);
+            const itemEnd = item.endDate || new Date(item.end);
+            if (itemEnd.getTime() <= startMs || itemStart.getTime() >= endMs) return;
+
+            const left = Math.max(chartLeft, xForDate(itemStart));
+            const right = Math.min(chartRight, xForDate(itemEnd));
+            const widthPx = right - left;
+            if (widthPx <= 1) return;
+
+            const isMatch = hover && hover.office === row.office && hover.start === item.start;
+            const isDimmed = hover && hover.office === row.office && !isMatch;
+            const baseColor = PARTY_COLORS[item[row.partyKey]] || PARTY_COLORS.OTHER;
+
+            ctx.fillStyle = isDimmed ? setColorAlpha(baseColor, 0.07) : (isMatch ? setColorAlpha(baseColor, 0.52) : baseColor);
+            ctx.fillRect(left, row.y, widthPx, rowHeight);
+
+            ctx.strokeStyle = isMatch ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.16)";
+            ctx.lineWidth = isMatch ? 2 : 1;
+            ctx.strokeRect(left, row.y + 0.5, widthPx, rowHeight - 1);
+
+            if (widthPx > 90) {
+                const avg = periodVisibleAvg(itemStart, itemEnd);
+                const labelText = row.label(item);
+                ctx.fillStyle = isDimmed ? "rgba(237,248,244,0.35)" : "rgba(237,248,244,0.86)";
+                ctx.font = "600 10px 'IBM Plex Mono', monospace";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "top";
+                ctx.fillText(labelText, left + widthPx / 2, row.y + 8);
+                if (Number.isFinite(avg) && widthPx > 130) {
+                    ctx.font = "500 10px 'IBM Plex Mono', monospace";
+                    ctx.textBaseline = "bottom";
+                    ctx.fillText(formatCurrency(avg), left + widthPx / 2, row.y + rowHeight - 8);
                 }
             }
+
+            canvas.$segments.push({
+                office: row.office,
+                start: item.start,
+                end: item.end,
+                label: row.label(item),
+                avg: periodVisibleAvg(itemStart, itemEnd),
+                x1: left,
+                x2: right,
+                y1: row.y,
+                y2: row.y + rowHeight
+            });
         });
+    });
+
+    const timeSettings = getTimeAxisSettings(rangeStart, rangeEnd);
+    const axisY = rowHeight * 3 + rowGap * 2 + 8;
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, axisY);
+    ctx.lineTo(chartRight, axisY);
+    ctx.stroke();
+
+    const tickDates = [];
+    const cursor = new Date(rangeStart);
+    cursor.setHours(0, 0, 0, 0);
+    if (timeSettings.unit === "month") {
+        cursor.setDate(1);
+    } else {
+        cursor.setMonth(0, 1);
     }
-    applyGovernanceChartHighlight(state.presidentBarChart, state.presidentBarChart?.$activeBarIndex ?? null, presidentPeriods, "president");
-
-    if (senateCtx) {
-        const senateLabels = state.senateControlAverages.map((item) => `${item.label}\nS:${item.seats}`);
-        const senateValues = state.senateControlAverages.map((item) => item.avg);
-        const senateColors = state.senateControlAverages.map((item) => item.party === "T" ? PARTY_COLORS.T : (PARTY_COLORS[item.party] || PARTY_COLORS.OTHER));
-        const senatePeriods = state.senateControlAverages.map((item) => ({
-            label: item.label,
-            start: item.start,
-            end: item.end
-        }));
-
-        if (state.senateBarChart) {
-            state.senateBarChart.data.labels = senateLabels;
-            state.senateBarChart.data.datasets[0].data = senateValues;
-            state.senateBarChart.data.datasets[0].backgroundColor = senateColors;
-            state.senateBarChart.data.datasets[0].baseBackgroundColor = [...senateColors];
-            state.senateBarChart.update("none");
+    while (cursor <= rangeEnd) {
+        tickDates.push(new Date(cursor));
+        if (timeSettings.unit === "month") {
+            cursor.setMonth(cursor.getMonth() + timeSettings.stepSize);
         } else {
-            state.senateBarChart = new Chart(senateCtx, {
-                type: "bar",
-                data: { labels: senateLabels, datasets: [{ label: "Avg gas price", data: senateValues, backgroundColor: senateColors, borderColor: "rgba(255,255,255,0.18)", borderWidth: 1 }] },
-                options: {
-                    ...makeBarChartOptions(50, 75, (label) => label.replace("\n", " ")),
-                    interaction: { mode: "nearest", intersect: true },
-                    onHover: (event, elements, chart) => {
-                        const activeIndex = elements?.length ? elements[0].index : null;
-                        chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
-                        applyGovernanceChartHighlight(chart, activeIndex, senatePeriods, "senate");
-                    }
-                }
-            });
+            cursor.setFullYear(cursor.getFullYear() + 1);
         }
-        applyGovernanceChartHighlight(state.senateBarChart, state.senateBarChart?.$activeBarIndex ?? null, senatePeriods, "senate");
     }
 
-    if (houseCtx) {
-        const houseLabels = state.houseControlAverages.map((item) => `${item.label}\nH:${item.seats}`);
-        const houseValues = state.houseControlAverages.map((item) => item.avg);
-        const houseColors = state.houseControlAverages.map((item) => PARTY_COLORS[item.party] || PARTY_COLORS.OTHER);
-        const housePeriods = state.houseControlAverages.map((item) => ({
-            label: item.label,
-            start: item.start,
-            end: item.end
-        }));
+    ctx.fillStyle = "#9ab8af";
+    ctx.font = "500 10px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    tickDates.forEach((tickDate, index) => {
+        const x = xForDate(tickDate);
+        if (x < chartLeft || x > chartRight) return;
+        ctx.strokeStyle = "rgba(255,255,255,0.12)";
+        ctx.beginPath();
+        ctx.moveTo(x, axisY);
+        ctx.lineTo(x, axisY + 5);
+        ctx.stroke();
+        ctx.fillText(formatTimeAxisTickLabel(tickDate.getTime(), timeSettings.mode, index), x, axisY + 7);
+    });
 
-        if (state.congressBarChart) {
-            state.congressBarChart.data.labels = houseLabels;
-            state.congressBarChart.data.datasets[0].data = houseValues;
-            state.congressBarChart.data.datasets[0].backgroundColor = houseColors;
-            state.congressBarChart.data.datasets[0].baseBackgroundColor = [...houseColors];
-            state.congressBarChart.update("none");
-        } else {
-            state.congressBarChart = new Chart(houseCtx, {
-                type: "bar",
-                data: { labels: houseLabels, datasets: [{ label: "Avg gas price", data: houseValues, backgroundColor: houseColors, borderColor: "rgba(255,255,255,0.18)", borderWidth: 1 }] },
-                options: {
-                    ...makeBarChartOptions(50, 75, (label) => label.replace("\n", " ")),
-                    interaction: { mode: "nearest", intersect: true },
-                    onHover: (event, elements, chart) => {
-                        const activeIndex = elements?.length ? elements[0].index : null;
-                        chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
-                        applyGovernanceChartHighlight(chart, activeIndex, housePeriods, "house");
-                    }
-                }
-            });
-        }
-        applyGovernanceChartHighlight(state.congressBarChart, state.congressBarChart?.$activeBarIndex ?? null, housePeriods, "house");
+    setText("governanceMeta", buildGovernanceMetaText(rangeStart, rangeEnd));
+
+    if (!canvas.$governanceListenersBound) {
+        const updateHoverFromPointer = (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const hit = (canvas.$segments || []).find((segment) => x >= segment.x1 && x <= segment.x2 && y >= segment.y1 && y <= segment.y2) || null;
+            const nextKey = hit ? `${hit.office}:${hit.start}` : null;
+            if (canvas.$hoverKey === nextKey) return;
+            canvas.$hoverKey = nextKey;
+            canvas.style.cursor = hit ? "pointer" : "default";
+            if (hit) {
+                setGovernanceHover({ office: hit.office, start: hit.start, end: hit.end, label: hit.label });
+                setText("governanceMeta", `${hit.office[0].toUpperCase()}${hit.office.slice(1)} · ${hit.label} · ${hit.start} to ${hit.end}${Number.isFinite(hit.avg) ? ` · Avg ${formatCurrency(hit.avg)}` : ""}`);
+            } else {
+                setGovernanceHover(null);
+                setText("governanceMeta", buildGovernanceMetaText(rangeStart, rangeEnd));
+            }
+            updateContextCharts();
+        };
+
+        canvas.addEventListener("mousemove", updateHoverFromPointer);
+        canvas.addEventListener("mouseleave", () => {
+            if (!canvas.$hoverKey) return;
+            canvas.$hoverKey = null;
+            canvas.style.cursor = "default";
+            setGovernanceHover(null);
+            setText("governanceMeta", buildGovernanceMetaText(state.selectedStart || state.allData[0]?.t, state.selectedEnd || state.allData[state.allData.length - 1]?.t));
+            updateContextCharts();
+        });
+        window.addEventListener("resize", () => updateContextCharts());
+        canvas.$governanceListenersBound = true;
     }
 }
 
@@ -3227,6 +3243,7 @@ function updateChart() {
         narrativeParts.push("Use the production overlay to compare price movement with supply-side context.");
     }
     setText("chartNarrative", narrativeParts.join(" "));
+    updateContextCharts();
     updateProductionChart();
     updateNewsHeadlinesPanel(filtered);
 }
