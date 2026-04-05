@@ -25,6 +25,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const acceptsHtml = (event.request.headers.get('accept') || '').includes('text/html');
+  const isDocumentRequest = event.request.mode === 'navigate' || event.request.destination === 'document' || acceptsHtml;
+
+  if (isDocumentRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const networkFetch = fetch(event.request)

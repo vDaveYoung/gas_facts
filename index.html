@@ -265,6 +265,50 @@
             margin-bottom: 22px;
         }
 
+        .controls-layout {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .control-card {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.025);
+            padding: 16px;
+            min-width: 0;
+        }
+
+        .control-card-range {
+            grid-column: 1 / -1;
+        }
+
+        .control-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .control-card-header h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .control-card-header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .control-card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
         .toggle-zone {
             align-items: center;
             color: var(--muted);
@@ -449,6 +493,86 @@
             position: relative;
         }
 
+        .war-timeline-panel {
+            margin-top: 10px;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            background: transparent;
+        }
+
+        .war-timeline-box {
+            height: 130px;
+            min-height: 130px;
+            position: relative;
+            margin-top: 0;
+        }
+
+        .conflict-table-wrap {
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: auto;
+            max-height: 210px;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .conflict-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.74rem;
+            color: #dcece7;
+        }
+
+        .conflict-table thead th {
+            position: sticky;
+            top: 0;
+            text-align: left;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            background: rgba(6, 20, 16, 0.94);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 7px 8px;
+            white-space: nowrap;
+        }
+
+        .conflict-table td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 8px;
+            white-space: nowrap;
+            color: #b9d0c8;
+        }
+
+        .conflict-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .conflict-table td.conflict-name {
+            font-weight: 600;
+            color: #edf8f4;
+        }
+
+        .conflict-table td.conflict-participants,
+        .conflict-table td.conflict-casualties,
+        .conflict-table td.conflict-deaths {
+            white-space: normal;
+            line-height: 1.35;
+        }
+
+        .conflict-metric-headline {
+            display: block;
+            color: #dcece7;
+            font-weight: 600;
+        }
+
+        .conflict-metric-sub {
+            display: block;
+            color: #a9c2ba;
+            margin-top: 2px;
+            font-size: 0.7rem;
+        }
+
         .news-panel {
             margin-top: 14px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -537,6 +661,7 @@
             border-radius: 18px;
             padding: 10px;
             background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
         }
 
         .graph-bookend-wrap {
@@ -621,8 +746,158 @@
         }
 
         .governance-context-box {
-            min-height: 360px;
-            height: 46vh;
+            height: 380px;
+            min-height: 380px;
+            overflow: hidden;
+        }
+
+        .governance-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .governance-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .governance-row-title {
+            color: rgba(154, 184, 175, 0.72);
+            font: 700 11px 'IBM Plex Mono', monospace;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding-left: 2px;
+        }
+
+        .governance-timeline-lane {
+            position: relative;
+            width: 100%;
+            height: 72px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            overflow: hidden;
+        }
+
+        .governance-segment {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            /* left and width are set via inline style */
+            border-right: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 4px;
+            text-align: center;
+            color: rgba(237,248,244,0.88);
+            font: 600 10px 'IBM Plex Mono', monospace;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .governance-segment.is-dimmed {
+            color: rgba(237,248,244,0.3);
+        }
+
+        .governance-segment.is-active {
+            outline: 2px solid rgba(255,255,255,0.92);
+            outline-offset: -2px;
+            z-index: 2;
+        }
+
+        .governance-segment-top,
+        .governance-segment-bottom {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .governance-axis {
+            position: relative;
+            width: 100%;
+            height: 28px;
+            border-top: 1px solid rgba(255,255,255,0.14);
+            overflow: visible;
+        }
+
+        .governance-axis-tick {
+            position: absolute;
+            top: 2px;
+            transform: translateX(-50%);
+            color: #9ab8af;
+            font: 500 10px 'IBM Plex Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .governance-axis-tick::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            width: 1px;
+            height: 6px;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.14);
+        }
+
+        .vote-summary-panel {
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .vote-summary-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .vote-table-wrap {
+            margin-top: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: auto;
+            max-height: 210px;
+        }
+
+        .vote-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.74rem;
+            color: #dcece7;
+        }
+
+        .vote-table thead th {
+            position: sticky;
+            top: 0;
+            text-align: left;
+            background: rgba(6, 20, 16, 0.94);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 7px 8px;
+            white-space: nowrap;
+        }
+
+        .vote-table td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 8px;
+            white-space: nowrap;
+            color: #b9d0c8;
+        }
+
+        .vote-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
         .section-collapse-btn {
@@ -705,6 +980,10 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            .controls-layout {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 640px) {
@@ -730,6 +1009,11 @@
             .chart-box {
                 min-height: 450px;
                 height: 72vh;
+            }
+
+            .war-timeline-box {
+                height: 118px;
+                min-height: 118px;
             }
         }
     </style>
@@ -806,6 +1090,30 @@
             </div>
             <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
         </div>
+        <div id="warTimelineContainer" class="war-timeline-panel" hidden>
+            <div class="status-inline" id="warTimelineMeta">Building conflict timeline...</div>
+            <div class="graph-bookend-wrap" style="margin-top:6px;">
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                <div class="war-timeline-box">
+                    <canvas id="warTimelineChart"></canvas>
+                </div>
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+            </div>
+            <div class="conflict-table-wrap" id="conflictTableWrap" hidden>
+                <table class="conflict-table" aria-label="Conflict timeline table">
+                    <thead>
+                        <tr>
+                            <th>Conflict</th>
+                            <th>Range</th>
+                            <th>Participants / Relationship</th>
+                            <th>Casualties (Est.)</th>
+                            <th>Deaths (Est.)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="conflictTableBody"></tbody>
+                </table>
+            </div>
+        </div>
         <div class="news-panel" id="newsPanel" hidden>
             <h3>Top News Headlines Near Selected Date</h3>
             <p class="news-meta" id="newsPanelMeta">Select a point on the timeline to focus headlines.</p>
@@ -831,8 +1139,14 @@
             <button class="btn btn-secondary section-collapse-btn" id="toggleControlsSection" type="button" aria-expanded="true">Collapse</button>
         </div>
         <div id="controlsContent" class="collapsible-content">
-        <div class="controls-top">
-            <div>
+        <div class="controls-layout">
+            <div class="control-card control-card-range">
+                <div class="control-card-header">
+                    <div>
+                        <h3>Range</h3>
+                        <p>Use presets or drag the slider to focus the timeline window.</p>
+                    </div>
+                </div>
                 <div class="range-pills" id="rangePills">
                     <button class="range-pill" data-years="1" type="button">Last 1Y</button>
                     <button class="range-pill" data-years="5" type="button">Last 5Y</button>
@@ -840,88 +1154,157 @@
                     <button class="range-pill" data-years="20" type="button">Last 20Y</button>
                     <button class="range-pill" data-mode="full" type="button">All Data</button>
                 </div>
+                <div id="range-slider"></div>
+                <div class="date-display" id="date-range-text">Loading timeline…</div>
             </div>
 
-            <div class="toggle-zone">
-                <div class="toggle-group">
-                    <span>Overlay buying power estimate</span>
-                    <label class="switch">
-                        <input type="checkbox" id="inflationToggle">
-                        <span class="slider"></span>
-                    </label>
+            <div class="control-card">
+                <div class="control-card-header">
+                    <div>
+                        <h3>Conflict</h3>
+                        <p>Manage the war timeline, filters, and table detail level.</p>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay presidential terms</span>
-                    <label class="switch">
-                        <input type="checkbox" id="presidencyToggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="control-card-grid">
+                    <div class="toggle-group">
+                        <span>Overlay wars / major military actions</span>
+                        <label class="switch">
+                            <input type="checkbox" id="warsToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>War filter: include U.S.-involved</span>
+                        <label class="switch">
+                            <input type="checkbox" id="warsUSFilterToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>War filter: include oil-market relevant</span>
+                        <label class="switch">
+                            <input type="checkbox" id="warsOilFilterToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>War filter: minimum duration</span>
+                        <button class="range-pill" id="warsDurationButton" type="button" aria-pressed="false">Over 4 days</button>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Conflict table view</span>
+                        <button class="range-pill" id="conflictViewButton" type="button" aria-pressed="false">Summary</button>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay House/Senate control</span>
-                    <label class="switch">
-                        <input type="checkbox" id="congressToggle">
-                        <span class="slider"></span>
-                    </label>
+            </div>
+
+            <div class="control-card">
+                <div class="control-card-header">
+                    <div>
+                        <h3>Political Context</h3>
+                        <p>Turn long-run U.S. governance overlays on or off.</p>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay U.S. registered vehicles</span>
-                    <label class="switch">
-                        <input type="checkbox" id="vehiclesToggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="control-card-grid">
+                    <div class="toggle-group">
+                        <span>Overlay presidential terms</span>
+                        <label class="switch">
+                            <input type="checkbox" id="presidencyToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Overlay House/Senate control</span>
+                        <label class="switch">
+                            <input type="checkbox" id="congressToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay DOW average</span>
-                    <label class="switch">
-                        <input type="checkbox" id="dowToggle">
-                        <span class="slider"></span>
-                    </label>
+            </div>
+
+            <div class="control-card">
+                <div class="control-card-header">
+                    <div>
+                        <h3>Market Overlays</h3>
+                        <p>Compare gas prices with inflation, markets, vehicles, and production.</p>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay WTI crude ÷ 42 (per-gallon equivalent)</span>
-                    <label class="switch">
-                        <input type="checkbox" id="oilPerGallonToggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="control-card-grid">
+                    <div class="toggle-group">
+                        <span>Overlay buying power estimate</span>
+                        <label class="switch">
+                            <input type="checkbox" id="inflationToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Overlay U.S. registered vehicles</span>
+                        <label class="switch">
+                            <input type="checkbox" id="vehiclesToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Overlay DOW average</span>
+                        <label class="switch">
+                            <input type="checkbox" id="dowToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Overlay WTI crude ÷ 42 (per-gallon equivalent)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="oilPerGallonToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Overlay Brent crude ÷ 42 (per-gallon equivalent)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="brentPerGallonToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Overlay oil production (World / OPEC / U.S. + top-5 producers)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="productionToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay Brent crude ÷ 42 (per-gallon equivalent)</span>
-                    <label class="switch">
-                        <input type="checkbox" id="brentPerGallonToggle">
-                        <span class="slider"></span>
-                    </label>
+            </div>
+
+            <div class="control-card">
+                <div class="control-card-header">
+                    <div>
+                        <h3>News & Axis</h3>
+                        <p>Control headline matching and how dates are shown.</p>
+                    </div>
                 </div>
-                <div class="toggle-group">
-                    <span>Overlay oil production (World / OPEC / U.S. + top-5 producers)</span>
-                    <label class="switch">
-                        <input type="checkbox" id="productionToggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-group">
-                    <span>News headlines for selected date</span>
-                    <label class="switch">
-                        <input type="checkbox" id="newsToggle" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-group">
-                    <span>News match mode</span>
-                    <button class="range-pill" id="newsModeButton" type="button" aria-pressed="false">Exact Date</button>
-                </div>
-                <div class="toggle-group">
-                    <span>Force detailed dates on time charts</span>
-                    <label class="switch">
-                        <input type="checkbox" id="dateAxisToggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="control-card-grid">
+                    <div class="toggle-group">
+                        <span>News headlines for selected date</span>
+                        <label class="switch">
+                            <input type="checkbox" id="newsToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-group">
+                        <span>News match mode</span>
+                        <button class="range-pill" id="newsModeButton" type="button" aria-pressed="false">Exact Date</button>
+                    </div>
+                    <div class="toggle-group">
+                        <span>Force detailed dates on time charts</span>
+                        <label class="switch">
+                            <input type="checkbox" id="dateAxisToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div id="range-slider"></div>
-        <div class="date-display" id="date-range-text">Loading timeline…</div>
         </div>
     </section>
 
@@ -958,9 +1341,29 @@
             <div class="graph-bookend-wrap">
                 <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
                 <div class="context-chart-box governance-context-box" style="margin-top:0;">
-                    <canvas id="governanceContextChart"></canvas>
+                    <div id="governanceContextTimeline" class="governance-timeline"></div>
                 </div>
                 <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+            </div>
+            <div class="vote-summary-panel" id="voteSummaryPanel">
+                <div class="vote-summary-top">
+                    <div class="status-inline" id="voteSummaryMeta">Loading election vote context...</div>
+                    <button class="range-pill" id="voteHistoryToggleButton" type="button" aria-pressed="false">Modern (1980+)</button>
+                </div>
+                <div class="vote-table-wrap" id="voteSummaryWrap" hidden>
+                    <table class="vote-table" aria-label="Election vote summary">
+                        <thead>
+                            <tr>
+                                <th>Election</th>
+                                <th>Winner</th>
+                                <th>Popular Vote</th>
+                                <th>Electoral Vote</th>
+                                <th>Runner-Up</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voteSummaryBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
@@ -1110,6 +1513,32 @@ const PRESIDENTIAL_TERMS = [
     ...term,
     startDate: new Date(term.start),
     endDate: new Date(term.end)
+}));
+
+const PRESIDENTIAL_ELECTION_RESULTS = [
+    { year: 1948, date: "1948-11-02", winner: "Harry S. Truman", winnerParty: "D", winnerPopularPct: 49.6, winnerEV: 303, runnerUp: "Thomas E. Dewey", runnerUpParty: "R", runnerUpPopularPct: 45.1, runnerUpEV: 189 },
+    { year: 1952, date: "1952-11-04", winner: "Dwight D. Eisenhower", winnerParty: "R", winnerPopularPct: 55.2, winnerEV: 442, runnerUp: "Adlai Stevenson", runnerUpParty: "D", runnerUpPopularPct: 44.3, runnerUpEV: 89 },
+    { year: 1956, date: "1956-11-06", winner: "Dwight D. Eisenhower", winnerParty: "R", winnerPopularPct: 57.4, winnerEV: 457, runnerUp: "Adlai Stevenson", runnerUpParty: "D", runnerUpPopularPct: 42.0, runnerUpEV: 73 },
+    { year: 1960, date: "1960-11-08", winner: "John F. Kennedy", winnerParty: "D", winnerPopularPct: 49.7, winnerEV: 303, runnerUp: "Richard Nixon", runnerUpParty: "R", runnerUpPopularPct: 49.6, runnerUpEV: 219 },
+    { year: 1964, date: "1964-11-03", winner: "Lyndon B. Johnson", winnerParty: "D", winnerPopularPct: 61.1, winnerEV: 486, runnerUp: "Barry Goldwater", runnerUpParty: "R", runnerUpPopularPct: 38.5, runnerUpEV: 52 },
+    { year: 1968, date: "1968-11-05", winner: "Richard Nixon", winnerParty: "R", winnerPopularPct: 43.4, winnerEV: 301, runnerUp: "Hubert Humphrey", runnerUpParty: "D", runnerUpPopularPct: 42.7, runnerUpEV: 191 },
+    { year: 1972, date: "1972-11-07", winner: "Richard Nixon", winnerParty: "R", winnerPopularPct: 60.7, winnerEV: 520, runnerUp: "George McGovern", runnerUpParty: "D", runnerUpPopularPct: 37.5, runnerUpEV: 17 },
+    { year: 1976, date: "1976-11-02", winner: "Jimmy Carter", winnerParty: "D", winnerPopularPct: 50.1, winnerEV: 297, runnerUp: "Gerald Ford", runnerUpParty: "R", runnerUpPopularPct: 48.0, runnerUpEV: 240 },
+    { year: 1980, date: "1980-11-04", winner: "Ronald Reagan", winnerParty: "R", winnerPopularPct: 50.7, winnerEV: 489, runnerUp: "Jimmy Carter", runnerUpParty: "D", runnerUpPopularPct: 41.0, runnerUpEV: 49 },
+    { year: 1984, date: "1984-11-06", winner: "Ronald Reagan", winnerParty: "R", winnerPopularPct: 58.8, winnerEV: 525, runnerUp: "Walter Mondale", runnerUpParty: "D", runnerUpPopularPct: 40.6, runnerUpEV: 13 },
+    { year: 1988, date: "1988-11-08", winner: "George H.W. Bush", winnerParty: "R", winnerPopularPct: 53.4, winnerEV: 426, runnerUp: "Michael Dukakis", runnerUpParty: "D", runnerUpPopularPct: 45.6, runnerUpEV: 111 },
+    { year: 1992, date: "1992-11-03", winner: "Bill Clinton", winnerParty: "D", winnerPopularPct: 43.0, winnerEV: 370, runnerUp: "George H.W. Bush", runnerUpParty: "R", runnerUpPopularPct: 37.4, runnerUpEV: 168 },
+    { year: 1996, date: "1996-11-05", winner: "Bill Clinton", winnerParty: "D", winnerPopularPct: 49.2, winnerEV: 379, runnerUp: "Bob Dole", runnerUpParty: "R", runnerUpPopularPct: 40.7, runnerUpEV: 159 },
+    { year: 2000, date: "2000-11-07", winner: "George W. Bush", winnerParty: "R", winnerPopularPct: 47.9, winnerEV: 271, runnerUp: "Al Gore", runnerUpParty: "D", runnerUpPopularPct: 48.4, runnerUpEV: 266 },
+    { year: 2004, date: "2004-11-02", winner: "George W. Bush", winnerParty: "R", winnerPopularPct: 50.7, winnerEV: 286, runnerUp: "John Kerry", runnerUpParty: "D", runnerUpPopularPct: 48.3, runnerUpEV: 251 },
+    { year: 2008, date: "2008-11-04", winner: "Barack Obama", winnerParty: "D", winnerPopularPct: 52.9, winnerEV: 365, runnerUp: "John McCain", runnerUpParty: "R", runnerUpPopularPct: 45.7, runnerUpEV: 173 },
+    { year: 2012, date: "2012-11-06", winner: "Barack Obama", winnerParty: "D", winnerPopularPct: 51.1, winnerEV: 332, runnerUp: "Mitt Romney", runnerUpParty: "R", runnerUpPopularPct: 47.2, runnerUpEV: 206 },
+    { year: 2016, date: "2016-11-08", winner: "Donald Trump", winnerParty: "R", winnerPopularPct: 46.1, winnerEV: 304, runnerUp: "Hillary Clinton", runnerUpParty: "D", runnerUpPopularPct: 48.2, runnerUpEV: 227 },
+    { year: 2020, date: "2020-11-03", winner: "Joe Biden", winnerParty: "D", winnerPopularPct: 51.3, winnerEV: 306, runnerUp: "Donald Trump", runnerUpParty: "R", runnerUpPopularPct: 46.8, runnerUpEV: 232 },
+    { year: 2024, date: "2024-11-05", winner: "Donald Trump", winnerParty: "R", winnerPopularPct: 49.8, winnerEV: 312, runnerUp: "Kamala Harris", runnerUpParty: "D", runnerUpPopularPct: 48.3, runnerUpEV: 226 }
+].map((result) => ({
+    ...result,
+    electionDate: new Date(result.date)
 }));
 
 const CONGRESSIONAL_CONTROL = [
@@ -1295,6 +1724,161 @@ const NEWS_EVENTS = [
     t: new Date(event.date)
 }));
 
+const MILITARY_ACTIONS = [
+    {
+        label: "Gulf War",
+        category: "war",
+        start: "1990-08-02",
+        end: "1991-02-28",
+        usInvolved: true,
+        oilRelevant: true,
+        participants: "U.S.-led coalition vs Iraq (Kuwait theater)",
+        casualtiesEstimate: "~75K-105K total casualties",
+        deathsEstimate: "~25K-50K deaths",
+        civilianCasualtiesEstimate: "Tens of thousands (Kuwait/Iraq theater)",
+        combatantCasualtiesEstimate: "Majority of recorded casualties",
+        civilianDeathsEstimate: "~3K-5K",
+        combatantDeathsEstimate: "~20K-45K",
+        usDeathsEstimate: "~294 combat deaths"
+    },
+    {
+        label: "Kosovo War",
+        category: "operation",
+        start: "1998-02-28",
+        end: "1999-06-11",
+        usInvolved: true,
+        oilRelevant: false,
+        participants: "NATO (incl. U.S.) vs FR Yugoslavia / Serbian forces",
+        casualtiesEstimate: "~13K-16K total casualties",
+        deathsEstimate: "~13K-14K deaths",
+        civilianCasualtiesEstimate: "Large civilian share in Kosovo/Serbia",
+        combatantCasualtiesEstimate: "Several thousand military/police",
+        civilianDeathsEstimate: "~8K-10K",
+        combatantDeathsEstimate: "~4K-6K",
+        usDeathsEstimate: "0 hostile deaths in theater"
+    },
+    {
+        label: "Afghanistan War",
+        category: "war",
+        start: "2001-10-07",
+        end: "2021-08-30",
+        usInvolved: true,
+        oilRelevant: false,
+        participants: "U.S./NATO + Afghan govt vs Taliban and aligned groups",
+        casualtiesEstimate: "~200K+ total casualties",
+        deathsEstimate: "~176K-243K deaths",
+        civilianCasualtiesEstimate: "~75K+ civilians injured/killed",
+        combatantCasualtiesEstimate: "Hundreds of thousands across armed groups",
+        civilianDeathsEstimate: "~46K-70K",
+        combatantDeathsEstimate: "~130K-170K",
+        usDeathsEstimate: "~2.4K U.S. military deaths"
+    },
+    {
+        label: "Iraq War",
+        category: "war",
+        start: "2003-03-20",
+        end: "2011-12-18",
+        usInvolved: true,
+        oilRelevant: true,
+        participants: "U.S.-led coalition + Iraqi govt vs Baathist/insurgent groups",
+        casualtiesEstimate: "~300K+ total casualties",
+        deathsEstimate: "~200K-300K deaths",
+        civilianCasualtiesEstimate: "Civilian burden substantial across insurgency years",
+        combatantCasualtiesEstimate: "Large coalition, Iraqi force, and insurgent losses",
+        civilianDeathsEstimate: "~120K-200K",
+        combatantDeathsEstimate: "~80K-120K",
+        usDeathsEstimate: "~4.4K U.S. military deaths"
+    },
+    {
+        label: "Libya Intervention",
+        category: "operation",
+        start: "2011-03-19",
+        end: "2011-10-31",
+        usInvolved: true,
+        oilRelevant: true,
+        participants: "NATO (incl. U.S.) supporting anti-Gaddafi forces",
+        casualtiesEstimate: "~25K-50K total casualties",
+        deathsEstimate: "~15K-30K deaths",
+        civilianCasualtiesEstimate: "Urban-fighting civilian impact significant",
+        combatantCasualtiesEstimate: "Most losses among regime/opposition fighters",
+        civilianDeathsEstimate: "~5K-10K",
+        combatantDeathsEstimate: "~10K-20K",
+        usDeathsEstimate: "No large U.S. ground-combat death burden"
+    },
+    {
+        label: "Campaign Against ISIS",
+        category: "operation",
+        start: "2014-06-13",
+        end: "2019-03-23",
+        usInvolved: true,
+        oilRelevant: true,
+        participants: "U.S.-led coalition + Iraqi/SDF partners vs ISIS",
+        casualtiesEstimate: "~100K+ total casualties",
+        deathsEstimate: "~60K-110K deaths",
+        civilianCasualtiesEstimate: "High civilian toll in Mosul/Raqqa phases",
+        combatantCasualtiesEstimate: "Large ISIS and partner-force combat losses",
+        civilianDeathsEstimate: "~15K-30K",
+        combatantDeathsEstimate: "~45K-80K",
+        usDeathsEstimate: "Dozens of U.S. military deaths"
+    },
+    {
+        label: "Yemen / Red Sea Security",
+        category: "operation",
+        start: "2015-03-26",
+        end: "2026-12-31",
+        ongoing: true,
+        usInvolved: true,
+        oilRelevant: true,
+        participants: "Saudi-led coalition + U.S./partner maritime actions vs Houthi forces",
+        casualtiesEstimate: "~300K+ conflict-linked casualties",
+        deathsEstimate: "~150K+ direct conflict deaths",
+        civilianCasualtiesEstimate: "Large civilian exposure from strikes and ground war",
+        combatantCasualtiesEstimate: "Very high among coalition/Houthi combatants",
+        civilianDeathsEstimate: "~20K+ direct conflict civilian deaths",
+        combatantDeathsEstimate: "~130K+",
+        usDeathsEstimate: "Low direct U.S. combat death count"
+    },
+    {
+        label: "Russia-Ukraine War",
+        category: "war",
+        start: "2022-02-24",
+        end: "2026-12-31",
+        ongoing: true,
+        usInvolved: false,
+        oilRelevant: true,
+        participants: "Russia vs Ukraine (U.S./NATO support to Ukraine)",
+        casualtiesEstimate: "~1M+ total casualties (both sides)",
+        deathsEstimate: "~150K-250K+ deaths",
+        civilianCasualtiesEstimate: "Large civilian casualties from missile/artillery strikes",
+        combatantCasualtiesEstimate: "Majority in military losses on both sides",
+        civilianDeathsEstimate: "~10K-30K+",
+        combatantDeathsEstimate: "~140K-220K+",
+        usDeathsEstimate: "No large-scale direct U.S. combat deaths"
+    },
+    {
+        label: "Israel-Hamas War",
+        category: "war",
+        start: "2023-10-07",
+        end: "2026-12-31",
+        ongoing: true,
+        usInvolved: true,
+        oilRelevant: true,
+        participants: "Israel vs Hamas and allied militant groups (U.S. allied support)",
+        casualtiesEstimate: "~120K+ total casualties",
+        deathsEstimate: "~40K-60K+ deaths",
+        civilianCasualtiesEstimate: "Large civilian casualties in Gaza and Israel",
+        combatantCasualtiesEstimate: "High militant and military casualties",
+        civilianDeathsEstimate: "~30K-45K+",
+        combatantDeathsEstimate: "~10K-20K+",
+        usDeathsEstimate: "Limited direct U.S. combat deaths"
+    }
+].map((item) => ({
+    ...item,
+    startDate: new Date(item.start),
+    endDate: new Date(item.end),
+    durationDays: Math.max(0, Math.round((new Date(item.end).getTime() - new Date(item.start).getTime()) / (24 * 60 * 60 * 1000)))
+}));
+
 const state = {
     allData: [],
     dowSeries: [],
@@ -1311,6 +1895,7 @@ const state = {
         topProducersContext: []
     },
     chart: null,
+    warTimelineChart: null,
     productionChart: null,
     presidentBarChart: null,
     congressBarChart: null,
@@ -1322,6 +1907,11 @@ const state = {
     selectedPreset: null,
     showPresidentialOverlay: false,
     showCongressOverlay: false,
+    showWarOverlay: false,
+    warFilterUS: true,
+    warFilterOil: true,
+    warMinDurationDays: 4,
+    conflictDetailMode: false,
     showVehiclesOverlay: false,
     showDowOverlay: false,
     showOilPerGallonOverlay: false,
@@ -1334,6 +1924,7 @@ const state = {
     productionLegendDate: null,
     newsMatchMode: "exact",
     showDetailedDates: false,
+    showHistoricalVotes: false,
     selectedNewsDate: null,
     newsCache: {},
     newsRequestToken: 0,
@@ -1350,6 +1941,8 @@ const state = {
 const blendMarkerPlugin = {
     id: "blendMarkers",
     afterDatasetsDraw(chart) {
+        if (chart?.canvas?.id !== "mainChart") return;
+
         const { ctx, chartArea, scales } = chart;
         const xScale = scales.x;
         if (!xScale || !chartArea) return;
@@ -1389,6 +1982,8 @@ const blendMarkerPlugin = {
 const governanceOverlayPlugin = {
     id: "governanceOverlay",
     beforeDatasetsDraw(chart) {
+        if (chart?.canvas?.id !== "mainChart") return;
+
         const { ctx, chartArea, scales } = chart;
         const xScale = scales.x;
         if (!xScale || !chartArea) return;
@@ -1505,7 +2100,211 @@ const governanceOverlayPlugin = {
     }
 };
 
-Chart.register(governanceOverlayPlugin, blendMarkerPlugin);
+const WAR_DURATION_STEPS = [4, 14, 30];
+const WAR_OVERLAY_MAX_LANES = 4;
+
+function getFilteredWarActions(minDate, maxDate) {
+    const minMs = minDate instanceof Date ? minDate.getTime() : Number.NEGATIVE_INFINITY;
+    const maxMs = maxDate instanceof Date ? maxDate.getTime() : Number.POSITIVE_INFINITY;
+    const includeUS = Boolean(state.warFilterUS);
+    const includeOil = Boolean(state.warFilterOil);
+    const minDurationDays = Number.isFinite(state.warMinDurationDays) ? state.warMinDurationDays : 4;
+
+    return MILITARY_ACTIONS
+        .filter((item) => Number.isFinite(item.startDate.getTime()) && Number.isFinite(item.endDate.getTime()))
+        .filter((item) => (includeUS && item.usInvolved) || (includeOil && item.oilRelevant))
+        .filter((item) => Number.isFinite(item.durationDays) && item.durationDays > minDurationDays)
+        .filter((item) => item.endDate.getTime() >= minMs && item.startDate.getTime() <= maxMs)
+        .sort((a, b) => a.startDate - b.startDate);
+}
+
+function assignWarLanes(actions, maxLanes = WAR_OVERLAY_MAX_LANES) {
+    const laneEndMs = [];
+    return actions.map((item) => {
+        const startMs = item.startDate.getTime();
+        const endMs = item.endDate.getTime();
+        let laneIndex = laneEndMs.findIndex((laneEnd) => laneEnd < startMs);
+        if (laneIndex === -1) {
+            laneEndMs.push(endMs);
+            laneIndex = laneEndMs.length - 1;
+        } else {
+            laneEndMs[laneIndex] = endMs;
+        }
+        return { ...item, laneIndex: Math.min(laneIndex, maxLanes - 1) };
+    });
+}
+
+function formatConflictTableRows(actions) {
+    if (!Array.isArray(actions) || !actions.length) return "";
+
+    const formatMetricCell = (headline, detailLines = []) => {
+        const cleanedDetails = (detailLines || []).filter((line) => typeof line === "string" && line.trim());
+        const shouldExpand = Boolean(state.conflictDetailMode) && cleanedDetails.length > 0;
+        if (!shouldExpand) return escapeHtml(headline || "Estimate unavailable");
+
+        return [
+            `<span class="conflict-metric-headline">${escapeHtml(headline || "Estimate unavailable")}</span>`,
+            ...cleanedDetails.map((line) => `<span class="conflict-metric-sub">${escapeHtml(line)}</span>`)
+        ].join("");
+    };
+
+    return actions.map((item) => {
+        const endText = item.ongoing ? "Ongoing" : formatCompactDate(item.endDate);
+        const rangeText = `${formatCompactDate(item.startDate)} to ${endText}`;
+        const participantsText = item.participants || (item.usInvolved ? "U.S.-linked coalition or partner role" : "Non-U.S. direct combatants");
+        const casualtiesText = item.casualtiesEstimate || "Estimate unavailable";
+        const deathsText = item.deathsEstimate || "Estimate unavailable";
+        const casualtiesCell = formatMetricCell(casualtiesText, [
+            item.civilianCasualtiesEstimate ? `Civilian casualties: ${item.civilianCasualtiesEstimate}` : "",
+            item.combatantCasualtiesEstimate ? `Combatant casualties: ${item.combatantCasualtiesEstimate}` : ""
+        ]);
+        const deathsCell = formatMetricCell(deathsText, [
+            item.civilianDeathsEstimate ? `Civilian deaths: ${item.civilianDeathsEstimate}` : "",
+            item.combatantDeathsEstimate ? `Combatant deaths: ${item.combatantDeathsEstimate}` : "",
+            item.usDeathsEstimate ? `U.S. deaths: ${item.usDeathsEstimate}` : ""
+        ]);
+
+        return `
+            <tr>
+                <td class="conflict-name">${escapeHtml(item.label)}</td>
+                <td>${escapeHtml(rangeText)}</td>
+                <td class="conflict-participants">${escapeHtml(participantsText)}</td>
+                <td class="conflict-casualties">${casualtiesCell}</td>
+                <td class="conflict-deaths">${deathsCell}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function getWarTimelineLayoutPadding(targetChart = null) {
+    const fallback = { top: 4, right: 8, bottom: 4, left: 8 };
+    const mainChart = state.chart;
+    if (!mainChart || !mainChart.chartArea || !Number.isFinite(mainChart.width) || mainChart.width <= 0) {
+        return fallback;
+    }
+
+    const targetWidth = Number.isFinite(targetChart?.width) && targetChart.width > 0
+        ? targetChart.width
+        : mainChart.width;
+
+    // Use proportional padding so alignment stays stable across different canvases and DPR.
+    const leftRatio = Math.max(0, Math.min(0.45, mainChart.chartArea.left / mainChart.width));
+    const rightRatio = Math.max(0, Math.min(0.45, (mainChart.width - mainChart.chartArea.right) / mainChart.width));
+
+    const left = Math.max(8, Math.round(leftRatio * targetWidth));
+    const right = Math.max(8, Math.round(rightRatio * targetWidth));
+
+    return {
+        top: 4,
+        right,
+        bottom: 4,
+        left
+    };
+}
+
+const warTimelineBandsPlugin = {
+    id: "warTimelineBands",
+    afterDraw(chart, _args, pluginOptions) {
+        const actions = Array.isArray(pluginOptions?.actions) ? pluginOptions.actions : [];
+        if (!actions.length) return;
+
+        const { ctx, chartArea, scales } = chart;
+        const xScale = scales?.x;
+        if (!xScale || !chartArea) return;
+
+        const laneGap = 3;
+        const laneCount = Math.max(1, Math.min(WAR_OVERLAY_MAX_LANES, Number(pluginOptions?.laneCount) || WAR_OVERLAY_MAX_LANES));
+        const availableHeight = Math.max(24, chartArea.bottom - chartArea.top - 6);
+        const laneHeight = Math.max(10, Math.floor((availableHeight - ((laneCount - 1) * laneGap)) / laneCount));
+        const topBase = chartArea.top + 3;
+
+        const colorByCategory = {
+            war: "rgba(239, 68, 68, 0.34)",
+            operation: "rgba(245, 158, 11, 0.34)",
+            default: "rgba(148, 163, 184, 0.28)"
+        };
+        const strokeByCategory = {
+            war: "rgba(248, 113, 113, 0.64)",
+            operation: "rgba(251, 191, 36, 0.64)",
+            default: "rgba(203, 213, 225, 0.5)"
+        };
+
+        const leftFor = (date) => Math.max(chartArea.left, xScale.getPixelForValue(date));
+        const rightFor = (date) => Math.min(chartArea.right, xScale.getPixelForValue(date));
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+        ctx.clip();
+
+        actions.forEach((item) => {
+            const left = leftFor(item.startDate);
+            const right = rightFor(item.endDate);
+            const width = right - left;
+            if (width <= 1) return;
+
+            const y = topBase + (item.laneIndex * (laneHeight + laneGap));
+            const fill = colorByCategory[item.category] || colorByCategory.default;
+            const stroke = strokeByCategory[item.category] || strokeByCategory.default;
+
+            ctx.fillStyle = fill;
+            ctx.fillRect(left, y, width, laneHeight);
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(left, y, width, laneHeight);
+
+            const endText = item.ongoing ? "Ongoing" : formatCompactDate(item.endDate);
+            const labelFull = `${item.label} · ${formatCompactDate(item.startDate)} to ${endText}`;
+            const labelShort = item.label;
+            const textPadding = 4;
+            const availableWidthText = width - (textPadding * 2);
+            if (availableWidthText < 10) return;
+
+            ctx.font = "600 10px 'IBM Plex Mono', monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+
+            let label = null;
+            if (ctx.measureText(labelFull).width <= availableWidthText) {
+                label = labelFull;
+            } else if (ctx.measureText(labelShort).width <= availableWidthText) {
+                label = labelShort;
+            }
+
+            if (label) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(left + textPadding, y, availableWidthText, laneHeight);
+                ctx.clip();
+                ctx.fillStyle = "rgba(237, 248, 244, 0.95)";
+                ctx.fillText(label, left + textPadding, y + (laneHeight / 2));
+                ctx.restore();
+            }
+        });
+
+        ctx.restore();
+    }
+};
+
+Chart.register(governanceOverlayPlugin, blendMarkerPlugin, warTimelineBandsPlugin);
+
+function getWarDurationButtonLabel(minDaysExclusive) {
+    return `Over ${minDaysExclusive} days`;
+}
+
+function syncWarDurationButtonLabel() {
+    const button = document.getElementById("warsDurationButton");
+    if (!button) return;
+    button.textContent = getWarDurationButtonLabel(state.warMinDurationDays);
+}
+
+function syncConflictViewButtonLabel() {
+    const button = document.getElementById("conflictViewButton");
+    if (!button) return;
+    const isDetailed = Boolean(state.conflictDetailMode);
+    button.textContent = isDetailed ? "Detailed" : "Summary";
+    button.setAttribute("aria-pressed", String(isDetailed));
+}
 
 const getInflationFactor = (year) => {
     if (year >= 2025) return 1.0;
@@ -1641,6 +2440,15 @@ function getFilteredData() {
 function setText(id, value) {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 function setStatus(text, isError = false) {
@@ -2081,118 +2889,186 @@ function buildGovernanceMetaText(rangeStart, rangeEnd) {
     return `Aligned governance timeline for ${formatCompactDate(rangeStart)} to ${formatCompactDate(rangeEnd)}. Hover a segment to highlight the same office period on the main chart.`;
 }
 
+function formatVotePercent(value) {
+    return Number.isFinite(value) ? `${value.toFixed(1)}%` : "--";
+}
+
+function syncVoteHistoryToggleLabel() {
+    const button = document.getElementById("voteHistoryToggleButton");
+    if (!button) return;
+    const isHistorical = Boolean(state.showHistoricalVotes);
+    button.textContent = isHistorical ? "Expanded History" : "Modern (1980+)";
+    button.setAttribute("aria-pressed", String(isHistorical));
+}
+
+function renderElectionVoteSummary(rangeStart, rangeEnd) {
+    const voteMeta = document.getElementById("voteSummaryMeta");
+    const voteWrap = document.getElementById("voteSummaryWrap");
+    const voteBody = document.getElementById("voteSummaryBody");
+    if (!voteMeta || !voteWrap || !voteBody) return;
+
+    const startMs = rangeStart instanceof Date ? rangeStart.getTime() : Number.NaN;
+    const endMs = rangeEnd instanceof Date ? rangeEnd.getTime() : Number.NaN;
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+        voteWrap.hidden = true;
+        voteBody.innerHTML = "";
+        setText("voteSummaryMeta", "Election vote context unavailable for this range.");
+        return;
+    }
+
+    const inRange = PRESIDENTIAL_ELECTION_RESULTS
+        .filter((result) => Number.isFinite(result.electionDate.getTime()))
+        .filter((result) => state.showHistoricalVotes || result.year >= 1980)
+        .filter((result) => {
+            const electionMs = result.electionDate.getTime();
+            return electionMs >= startMs && electionMs <= endMs;
+        })
+        .sort((a, b) => a.electionDate - b.electionDate);
+
+    if (!inRange.length) {
+        voteWrap.hidden = true;
+        voteBody.innerHTML = "";
+        setText("voteSummaryMeta", state.showHistoricalVotes
+            ? "No presidential elections fall inside the current timeline window."
+            : "No modern (1980+) presidential elections fall inside the current timeline window.");
+        return;
+    }
+
+    voteWrap.hidden = false;
+    voteBody.innerHTML = inRange.map((result) => {
+        const winnerLabel = `${result.winner} (${result.winnerParty})`;
+        const runnerLabel = `${result.runnerUp} (${result.runnerUpParty})`;
+        const popularText = `${formatVotePercent(result.winnerPopularPct)} vs ${formatVotePercent(result.runnerUpPopularPct)}`;
+        const electoralText = `${result.winnerEV}-${result.runnerUpEV}`;
+        return `
+            <tr>
+                <td>${result.year}</td>
+                <td>${escapeHtml(winnerLabel)}</td>
+                <td>${escapeHtml(popularText)}</td>
+                <td>${escapeHtml(electoralText)}</td>
+                <td>${escapeHtml(runnerLabel)}</td>
+            </tr>
+        `;
+    }).join("");
+
+    const historyMode = state.showHistoricalVotes ? "expanded historical" : "modern (1980+)";
+    setText("voteSummaryMeta", `Presidential election vote context (${historyMode}) in-window (${inRange.length} election${inRange.length === 1 ? "" : "s"}). Popular vote shown as winner vs runner-up; electoral vote shown as winner-runner-up.`);
+}
+
+function getGovernanceTimelineRange(timeline) {
+    const rangeStart = new Date(timeline?.dataset?.rangeStart || "");
+    const rangeEnd = new Date(timeline?.dataset?.rangeEnd || "");
+    if (Number.isNaN(rangeStart.getTime()) || Number.isNaN(rangeEnd.getTime())) {
+        return {
+            rangeStart: state.selectedStart || state.allData[0]?.t,
+            rangeEnd: state.selectedEnd || state.allData[state.allData.length - 1]?.t
+        };
+    }
+    return { rangeStart, rangeEnd };
+}
+
+function updateGovernanceTimelineHoverState(timeline) {
+    if (!timeline) return;
+
+    const { rangeStart, rangeEnd } = getGovernanceTimelineRange(timeline);
+    const hover = state.governanceHover;
+    let hasActiveSegment = false;
+
+    timeline.querySelectorAll(".governance-segment").forEach((segment) => {
+        const isMatch = Boolean(hover && hover.office === segment.dataset.office && hover.start === segment.dataset.start);
+        const isDimmed = Boolean(hover && hover.office === segment.dataset.office && !isMatch);
+        const baseColor = segment.dataset.baseColor || PARTY_COLORS.OTHER;
+        segment.classList.toggle("is-active", isMatch);
+        segment.classList.toggle("is-dimmed", isDimmed);
+        segment.style.background = isDimmed
+            ? setColorAlpha(baseColor, 0.07)
+            : (isMatch ? setColorAlpha(baseColor, 0.52) : baseColor);
+        hasActiveSegment = hasActiveSegment || isMatch;
+    });
+
+    if (!hover || !hasActiveSegment) {
+        setText("governanceMeta", buildGovernanceMetaText(rangeStart, rangeEnd));
+        return;
+    }
+
+    const average = Number.parseFloat(hover.avg);
+    setText(
+        "governanceMeta",
+        `${hover.office[0].toUpperCase()}${hover.office.slice(1)} · ${hover.label} · ${hover.start} to ${hover.end}${Number.isFinite(average) ? ` · Avg ${formatCurrency(average)}` : ""}`
+    );
+}
+
 function updateContextCharts() {
-    const canvas = document.getElementById("governanceContextChart");
-    if (!canvas || !state.allData.length) return;
+    const timeline = document.getElementById("governanceContextTimeline");
+    if (!timeline || !state.allData.length) return;
 
     const rangeStart = state.selectedStart || state.allData[0]?.t;
     const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
     if (!(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return;
 
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 800;
-    const height = canvas.clientHeight || 360;
-    canvas.width = Math.max(1, Math.round(width * dpr));
-    canvas.height = Math.max(1, Math.round(height * dpr));
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    const labelWidth = 78;
-    const axisHeight = 30;
-    const rowGap = 8;
-    const contentHeight = height - axisHeight - 12;
-    const rowHeight = Math.max(58, Math.floor((contentHeight - rowGap * 2) / 3));
-    const chartLeft = labelWidth;
-    const chartRight = width - 8;
-    const chartWidth = Math.max(1, chartRight - chartLeft);
     const startMs = rangeStart.getTime();
     const endMs = rangeEnd.getTime();
     const spanMs = Math.max(1, endMs - startMs);
-    const hover = state.governanceHover;
-    const xForDate = (date) => chartLeft + (((date.getTime() - startMs) / spanMs) * chartWidth);
+    const leftPctForDate = (date) => (((date.getTime() - startMs) / spanMs) * 100);
     const periodVisibleAvg = (startDate, endDate) => {
         const clippedStart = new Date(Math.max(startDate.getTime(), startMs));
         const clippedEnd = new Date(Math.min(endDate.getTime(), endMs));
         return averageForRange(clippedStart, clippedEnd);
     };
     const rows = [
-        { office: "president", title: "President", items: PRESIDENTIAL_TERMS, y: 0, partyKey: "party", label: (item) => item.name },
-        { office: "senate", title: "Senate", items: SENATE_CONTROL_PERIODS, y: rowHeight + rowGap, partyKey: "senate", label: (item) => `S:${item.senateSeats}` },
-        { office: "house", title: "House", items: HOUSE_CONTROL_PERIODS, y: (rowHeight + rowGap) * 2, partyKey: "house", label: (item) => `H:${item.houseSeats}` }
+        { office: "president", title: "President", items: PRESIDENTIAL_TERMS, partyKey: "party", label: (item) => item.name },
+        { office: "senate", title: "Senate", items: SENATE_CONTROL_PERIODS, partyKey: "senate", label: (item) => `S:${item.senateSeats}` },
+        { office: "house", title: "House", items: HOUSE_CONTROL_PERIODS, partyKey: "house", label: (item) => `H:${item.houseSeats}` }
     ];
 
-    ctx.clearRect(0, 0, width, height);
-    canvas.$segments = [];
-
-    rows.forEach((row) => {
-        ctx.fillStyle = "rgba(255,255,255,0.03)";
-        ctx.fillRect(chartLeft, row.y, chartWidth, rowHeight);
-
-        ctx.fillStyle = "rgba(154, 184, 175, 0.7)";
-        ctx.font = "700 11px 'IBM Plex Mono', monospace";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "middle";
-        ctx.fillText(row.title, labelWidth - 12, row.y + rowHeight / 2);
-
-        row.items.forEach((item) => {
+    const rowHtml = rows.map((row) => {
+        const segmentsHtml = row.items.map((item) => {
             const itemStart = item.startDate || new Date(item.start);
             const itemEnd = item.endDate || new Date(item.end);
-            if (itemEnd.getTime() <= startMs || itemStart.getTime() >= endMs) return;
+            if (itemEnd.getTime() <= startMs || itemStart.getTime() >= endMs) return "";
 
-            const left = Math.max(chartLeft, xForDate(itemStart));
-            const right = Math.min(chartRight, xForDate(itemEnd));
-            const widthPx = right - left;
-            if (widthPx <= 1) return;
+            const clippedStart = new Date(Math.max(itemStart.getTime(), startMs));
+            const clippedEnd = new Date(Math.min(itemEnd.getTime(), endMs));
+            const leftPct = Math.max(0, leftPctForDate(clippedStart));
+            const rightPct = Math.min(100, leftPctForDate(clippedEnd));
+            const widthPct = Math.max(0, rightPct - leftPct);
+            if (widthPct <= 0.08) return "";
 
-            const isMatch = hover && hover.office === row.office && hover.start === item.start;
-            const isDimmed = hover && hover.office === row.office && !isMatch;
+            const avg = periodVisibleAvg(itemStart, itemEnd);
+            const labelText = row.label(item);
             const baseColor = PARTY_COLORS[item[row.partyKey]] || PARTY_COLORS.OTHER;
+            const showTop = widthPct > 7;
+            const showBottom = widthPct > 10 && Number.isFinite(avg);
 
-            ctx.fillStyle = isDimmed ? setColorAlpha(baseColor, 0.07) : (isMatch ? setColorAlpha(baseColor, 0.52) : baseColor);
-            ctx.fillRect(left, row.y, widthPx, rowHeight);
+            return `
+                <div
+                    class="governance-segment"
+                    role="button"
+                    tabindex="0"
+                    style="left:${leftPct}%; width:${widthPct}%; background:${baseColor};"
+                    data-office="${row.office}"
+                    data-start="${item.start}"
+                    data-end="${item.end}"
+                    data-label="${escapeHtml(labelText)}"
+                    data-avg="${Number.isFinite(avg) ? avg : ""}"
+                    data-base-color="${baseColor}"
+                    aria-label="${escapeHtml(`${row.title} ${labelText} ${item.start} to ${item.end}`)}"
+                >
+                    <span class="governance-segment-top">${showTop ? escapeHtml(labelText) : ""}</span>
+                    <span class="governance-segment-bottom">${showBottom ? escapeHtml(formatCurrency(avg)) : ""}</span>
+                </div>
+            `;
+        }).join("");
 
-            ctx.strokeStyle = isMatch ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.16)";
-            ctx.lineWidth = isMatch ? 2 : 1;
-            ctx.strokeRect(left, row.y + 0.5, widthPx, rowHeight - 1);
-
-            if (widthPx > 90) {
-                const avg = periodVisibleAvg(itemStart, itemEnd);
-                const labelText = row.label(item);
-                ctx.fillStyle = isDimmed ? "rgba(237,248,244,0.35)" : "rgba(237,248,244,0.86)";
-                ctx.font = "600 10px 'IBM Plex Mono', monospace";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "top";
-                ctx.fillText(labelText, left + widthPx / 2, row.y + 8);
-                if (Number.isFinite(avg) && widthPx > 130) {
-                    ctx.font = "500 10px 'IBM Plex Mono', monospace";
-                    ctx.textBaseline = "bottom";
-                    ctx.fillText(formatCurrency(avg), left + widthPx / 2, row.y + rowHeight - 8);
-                }
-            }
-
-            canvas.$segments.push({
-                office: row.office,
-                start: item.start,
-                end: item.end,
-                label: row.label(item),
-                avg: periodVisibleAvg(itemStart, itemEnd),
-                x1: left,
-                x2: right,
-                y1: row.y,
-                y2: row.y + rowHeight
-            });
-        });
-    });
+        return `
+            <div class="governance-row">
+                <div class="governance-row-title">${row.title}</div>
+                <div class="governance-timeline-lane">${segmentsHtml}</div>
+            </div>
+        `;
+    }).join("");
 
     const timeSettings = getTimeAxisSettings(rangeStart, rangeEnd);
-    const axisY = rowHeight * 3 + rowGap * 2 + 8;
-    ctx.strokeStyle = "rgba(255,255,255,0.16)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(chartLeft, axisY);
-    ctx.lineTo(chartRight, axisY);
-    ctx.stroke();
-
     const tickDates = [];
     const cursor = new Date(rangeStart);
     cursor.setHours(0, 0, 0, 0);
@@ -2210,54 +3086,64 @@ function updateContextCharts() {
         }
     }
 
-    ctx.fillStyle = "#9ab8af";
-    ctx.font = "500 10px 'IBM Plex Mono', monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    tickDates.forEach((tickDate, index) => {
-        const x = xForDate(tickDate);
-        if (x < chartLeft || x > chartRight) return;
-        ctx.strokeStyle = "rgba(255,255,255,0.12)";
-        ctx.beginPath();
-        ctx.moveTo(x, axisY);
-        ctx.lineTo(x, axisY + 5);
-        ctx.stroke();
-        ctx.fillText(formatTimeAxisTickLabel(tickDate.getTime(), timeSettings.mode, index), x, axisY + 7);
-    });
+    const axisHtml = tickDates.map((tickDate, index) => {
+        const leftPct = Math.max(0, Math.min(100, leftPctForDate(tickDate)));
+        return `<div class="governance-axis-tick" style="left:${leftPct}%">${escapeHtml(formatTimeAxisTickLabel(tickDate.getTime(), timeSettings.mode, index))}</div>`;
+    }).join("");
 
-    setText("governanceMeta", buildGovernanceMetaText(rangeStart, rangeEnd));
+    timeline.innerHTML = `
+        ${rowHtml}
+        <div class="governance-axis">${axisHtml}</div>
+    `;
+    timeline.dataset.rangeStart = rangeStart.toISOString();
+    timeline.dataset.rangeEnd = rangeEnd.toISOString();
 
-    if (!canvas.$governanceListenersBound) {
-        const updateHoverFromPointer = (event) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            const hit = (canvas.$segments || []).find((segment) => x >= segment.x1 && x <= segment.x2 && y >= segment.y1 && y <= segment.y2) || null;
-            const nextKey = hit ? `${hit.office}:${hit.start}` : null;
-            if (canvas.$hoverKey === nextKey) return;
-            canvas.$hoverKey = nextKey;
-            canvas.style.cursor = hit ? "pointer" : "default";
-            if (hit) {
-                setGovernanceHover({ office: hit.office, start: hit.start, end: hit.end, label: hit.label });
-                setText("governanceMeta", `${hit.office[0].toUpperCase()}${hit.office.slice(1)} · ${hit.label} · ${hit.start} to ${hit.end}${Number.isFinite(hit.avg) ? ` · Avg ${formatCurrency(hit.avg)}` : ""}`);
-            } else {
-                setGovernanceHover(null);
-                setText("governanceMeta", buildGovernanceMetaText(rangeStart, rangeEnd));
-            }
-            updateContextCharts();
+    renderElectionVoteSummary(rangeStart, rangeEnd);
+
+    updateGovernanceTimelineHoverState(timeline);
+
+    if (!timeline.$governanceListenersBound) {
+        const syncGovernanceHover = (segment) => {
+            const avg = segment ? Number.parseFloat(segment.dataset.avg) : NaN;
+            setGovernanceHover(segment ? {
+                office: segment.dataset.office,
+                start: segment.dataset.start,
+                end: segment.dataset.end,
+                label: segment.dataset.label,
+                avg: Number.isFinite(avg) ? avg : ""
+            } : null);
+            updateGovernanceTimelineHoverState(timeline);
         };
 
-        canvas.addEventListener("mousemove", updateHoverFromPointer);
-        canvas.addEventListener("mouseleave", () => {
-            if (!canvas.$hoverKey) return;
-            canvas.$hoverKey = null;
-            canvas.style.cursor = "default";
+        timeline.addEventListener("pointermove", (event) => {
+            const segment = event.target.closest(".governance-segment");
+            const nextKey = segment ? `${segment.dataset.office}:${segment.dataset.start}` : null;
+            if (timeline.$hoverKey === nextKey) return;
+            timeline.$hoverKey = nextKey;
+            timeline.style.cursor = segment ? "pointer" : "default";
+            syncGovernanceHover(segment);
+        });
+        timeline.addEventListener("focusin", (event) => {
+            const segment = event.target.closest(".governance-segment");
+            if (!segment) return;
+            timeline.$hoverKey = `${segment.dataset.office}:${segment.dataset.start}`;
+            syncGovernanceHover(segment);
+        });
+        timeline.addEventListener("mouseleave", () => {
+            if (!timeline.$hoverKey) return;
+            timeline.$hoverKey = null;
+            timeline.style.cursor = "default";
             setGovernanceHover(null);
-            setText("governanceMeta", buildGovernanceMetaText(state.selectedStart || state.allData[0]?.t, state.selectedEnd || state.allData[state.allData.length - 1]?.t));
-            updateContextCharts();
+            updateGovernanceTimelineHoverState(timeline);
+        });
+        timeline.addEventListener("focusout", (event) => {
+            if (timeline.contains(event.relatedTarget)) return;
+            timeline.$hoverKey = null;
+            setGovernanceHover(null);
+            updateGovernanceTimelineHoverState(timeline);
         });
         window.addEventListener("resize", () => updateContextCharts());
-        canvas.$governanceListenersBound = true;
+        timeline.$governanceListenersBound = true;
     }
 }
 
@@ -2644,6 +3530,13 @@ function updateProductionChart() {
     if (state.productionChart) {
         state.productionChart.data.datasets = datasets;
         applyTimeAxisSettings(state.productionChart.options.scales.x, timeAxisSettings);
+        state.productionChart.options.layout = {
+            ...(state.productionChart.options.layout || {}),
+            padding: {
+                ...(state.productionChart.options.layout?.padding || {}),
+                top: 10
+            }
+        };
         const activeIndex = Number.isInteger(state.productionHoverIndex) && state.productionHoverIndex < datasets.length
             ? state.productionHoverIndex
             : null;
@@ -2655,6 +3548,11 @@ function updateProductionChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 10
+                    }
+                },
                 interaction: { mode: "index", intersect: false },
                 onHover: (event, elements, chart) => {
                     const resolved = (elements && elements.length)
@@ -2689,6 +3587,8 @@ function updateProductionChart() {
                 },
                 plugins: {
                     legend: {
+                        position: "top",
+                        align: "start",
                         onHover: (_event, legendItem, legend) => {
                             const chart = legend?.chart;
                             if (!chart) return;
@@ -2763,6 +3663,104 @@ function updateProductionChart() {
         setText("productionMeta", "No production points available in this selected window.");
     } else {
         setText("productionMeta", buildProductionMetaText(rangeStart, rangeEnd, legendReferenceDate));
+    }
+}
+
+function updateWarTimelineChart(minDate, maxDate, timeAxisSettings) {
+    const container = document.getElementById("warTimelineContainer");
+    const meta = document.getElementById("warTimelineMeta");
+    const conflictTableWrap = document.getElementById("conflictTableWrap");
+    const conflictTableBody = document.getElementById("conflictTableBody");
+    const ctx = document.getElementById("warTimelineChart")?.getContext("2d");
+    if (!container || !meta || !ctx || !conflictTableWrap || !conflictTableBody) return;
+
+    if (!state.showWarOverlay) {
+        container.hidden = true;
+        conflictTableWrap.hidden = true;
+        conflictTableBody.innerHTML = "";
+        if (state.warTimelineChart) {
+            state.warTimelineChart.options.plugins.warTimelineBands.actions = [];
+            state.warTimelineChart.update("none");
+        }
+        return;
+    }
+
+    container.hidden = false;
+
+    const actions = getFilteredWarActions(minDate, maxDate);
+    const withLanes = assignWarLanes(actions, WAR_OVERLAY_MAX_LANES);
+    const laneCount = Math.max(1, Math.min(WAR_OVERLAY_MAX_LANES, withLanes.reduce((maxLane, item) => Math.max(maxLane, item.laneIndex), 0) + 1));
+
+    if (state.warTimelineChart) {
+        state.warTimelineChart.options.scales.x.min = minDate;
+        state.warTimelineChart.options.scales.x.max = maxDate;
+        applyTimeAxisSettings(state.warTimelineChart.options.scales.x, timeAxisSettings, "#8aa9a0");
+        state.warTimelineChart.options.layout = {
+            ...(state.warTimelineChart.options.layout || {}),
+            padding: getWarTimelineLayoutPadding(state.warTimelineChart)
+        };
+        state.warTimelineChart.options.plugins.warTimelineBands.actions = withLanes;
+        state.warTimelineChart.options.plugins.warTimelineBands.laneCount = laneCount;
+        state.warTimelineChart.update("none");
+    } else {
+        state.warTimelineChart = new Chart(ctx, {
+            type: "line",
+            data: { datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                layout: {
+                    padding: getWarTimelineLayoutPadding()
+                },
+                interaction: {
+                    mode: "nearest",
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        type: "time",
+                        min: minDate,
+                        max: maxDate,
+                        time: { unit: timeAxisSettings.unit },
+                        grid: { display: false },
+                        ticks: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 1,
+                        display: false,
+                        grid: { display: false },
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false },
+                    warTimelineBands: {
+                        actions: withLanes,
+                        laneCount
+                    }
+                }
+            }
+        });
+    }
+
+    const filterBits = [];
+    if (state.warFilterUS) filterBits.push("U.S.-involved");
+    if (state.warFilterOil) filterBits.push("oil-market relevant");
+    const filterText = filterBits.length ? filterBits.join(" + ") : "no source filters selected";
+    const viewLabel = state.conflictDetailMode ? "Detailed" : "Summary";
+    if (actions.length) {
+        setText("warTimelineMeta", `Conflict timeline (${actions.length} windows in view; ${filterText}; over ${state.warMinDurationDays} days; table view: ${viewLabel}). Casualty/death columns are high-level estimates.`);
+        conflictTableWrap.hidden = false;
+        conflictTableBody.innerHTML = formatConflictTableRows(actions);
+    } else {
+        setText("warTimelineMeta", `Conflict timeline has no windows in this range (${filterText}; over ${state.warMinDurationDays} days).`);
+        conflictTableWrap.hidden = true;
+        conflictTableBody.innerHTML = "";
     }
 }
 
@@ -2991,6 +3989,13 @@ function updateChart() {
         state.chart.options.scales.x.min = minDate;
         state.chart.options.scales.x.max = maxDate;
         applyTimeAxisSettings(state.chart.options.scales.x, timeAxisSettings);
+        state.chart.options.layout = {
+            ...(state.chart.options.layout || {}),
+            padding: {
+                ...(state.chart.options.layout?.padding || {}),
+                top: 10
+            }
+        };
         const activeIndex = Number.isInteger(state.chart.$activeDatasetIndex) && state.chart.$activeDatasetIndex < datasets.length
             ? state.chart.$activeDatasetIndex
             : null;
@@ -3008,6 +4013,11 @@ function updateChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 10
+                    }
+                },
                 interaction: {
                     mode: "index",
                     intersect: false
@@ -3101,6 +4111,8 @@ function updateChart() {
                 },
                 plugins: {
                     legend: {
+                        position: "top",
+                        align: "start",
                         onHover: (_event, legendItem, legend) => {
                             const chart = legend?.chart;
                             if (!chart) return;
@@ -3212,6 +4224,8 @@ function updateChart() {
         });
     }
 
+    updateWarTimelineChart(minDate, maxDate, timeAxisSettings);
+
     setStatus(`Showing ${filtered.length.toLocaleString()} weekly readings`);
     const narrativeParts = [];
     narrativeParts.push(showAdjusted
@@ -3241,6 +4255,15 @@ function updateChart() {
         narrativeParts.push("Oil production overlays are active (World, OPEC, U.S., Saudi Arabia, Russia, Canada, and U.A.E. annual TBPD).");
     } else {
         narrativeParts.push("Use the production overlay to compare price movement with supply-side context.");
+    }
+    if (state.showWarOverlay) {
+        const filterParts = [];
+        if (state.warFilterUS) filterParts.push("U.S.-involved");
+        if (state.warFilterOil) filterParts.push("oil-market relevant");
+        const filterText = filterParts.length ? filterParts.join(" + ") : "no conflict source filters selected";
+        narrativeParts.push(`War/military timeline is active in its own strip under the main chart (${filterText}, duration over ${state.warMinDurationDays} days).`);
+    } else {
+        narrativeParts.push(`Turn on wars/military overlay to show a dedicated conflict timeline strip under the main chart (currently set to over ${state.warMinDurationDays} days).`);
     }
     setText("chartNarrative", narrativeParts.join(" "));
     updateContextCharts();
@@ -3445,6 +4468,30 @@ function wireInteractions() {
         state.showCongressOverlay = event.target.checked;
         updateChart();
     });
+    document.getElementById("warsToggle").addEventListener("change", (event) => {
+        state.showWarOverlay = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("warsUSFilterToggle").addEventListener("change", (event) => {
+        state.warFilterUS = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("warsOilFilterToggle").addEventListener("change", (event) => {
+        state.warFilterOil = event.target.checked;
+        updateChart();
+    });
+    document.getElementById("warsDurationButton").addEventListener("click", () => {
+        const currentIndex = WAR_DURATION_STEPS.indexOf(state.warMinDurationDays);
+        const nextIndex = (currentIndex + 1) % WAR_DURATION_STEPS.length;
+        state.warMinDurationDays = WAR_DURATION_STEPS[nextIndex];
+        syncWarDurationButtonLabel();
+        updateChart();
+    });
+    document.getElementById("conflictViewButton").addEventListener("click", () => {
+        state.conflictDetailMode = !state.conflictDetailMode;
+        syncConflictViewButtonLabel();
+        updateChart();
+    });
 
     const factsSection = document.getElementById("factsSection");
     document.getElementById("jumpToFactsButton").addEventListener("click", () => {
@@ -3490,6 +4537,11 @@ function wireInteractions() {
         modeButton.textContent = isWindowMode ? "10-Day Window" : "Exact Date";
         modeButton.setAttribute("aria-pressed", String(isWindowMode));
         updateChart();
+    });
+    document.getElementById("voteHistoryToggleButton").addEventListener("click", () => {
+        state.showHistoricalVotes = !state.showHistoricalVotes;
+        syncVoteHistoryToggleLabel();
+        updateContextCharts();
     });
     document.getElementById("dateAxisToggle").addEventListener("change", (event) => {
         state.showDetailedDates = event.target.checked;
@@ -3546,9 +4598,27 @@ function wireInteractions() {
     });
 
     if ("serviceWorker" in navigator && window.location.protocol.startsWith("http")) {
-        navigator.serviceWorker.register("./sw.js").catch(() => {
-            setText("statusMeta", "Status: data loaded, service worker registration skipped");
-        });
+        const host = window.location.hostname;
+        const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+
+        if (isLocalHost) {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+                registrations.forEach((registration) => registration.unregister());
+            }).catch(() => {
+                // no-op
+            });
+            if (window.caches) {
+                caches.keys().then((keys) => {
+                    keys.forEach((key) => caches.delete(key));
+                }).catch(() => {
+                    // no-op
+                });
+            }
+        } else {
+            navigator.serviceWorker.register("./sw.js").catch(() => {
+                setText("statusMeta", "Status: data loaded, service worker registration skipped");
+            });
+        }
     }
 
     state.showNewsBubble = document.getElementById("newsToggle").checked;
@@ -3556,6 +4626,14 @@ function wireInteractions() {
     state.showOilPerGallonOverlay = document.getElementById("oilPerGallonToggle").checked;
     state.showBrentPerGallonOverlay = document.getElementById("brentPerGallonToggle").checked;
     state.showProductionOverlay = document.getElementById("productionToggle").checked;
+    state.showWarOverlay = document.getElementById("warsToggle").checked;
+    state.warFilterUS = document.getElementById("warsUSFilterToggle").checked;
+    state.warFilterOil = document.getElementById("warsOilFilterToggle").checked;
+    state.conflictDetailMode = false;
+    state.showHistoricalVotes = false;
+    syncWarDurationButtonLabel();
+    syncConflictViewButtonLabel();
+    syncVoteHistoryToggleLabel();
 }
 
 wireInteractions();

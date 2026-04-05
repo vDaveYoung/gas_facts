@@ -1,4 +1,5 @@
 # gas_facts
+
 Gas Price Facts
 
 ## Locked Interaction Behavior (April 2026)
@@ -31,6 +32,18 @@ The governance section on the main page is now a single consolidated timeline in
 - The governance timeline follows the currently selected main-chart window.
 - Hovering a governance segment highlights the matching office period on the main Gas Price Timeline.
 - The standalone [politics.html](politics.html) page remains the full-history view beyond the oil-focused window.
+
+### Governance rendering stability notes
+
+- The main-page governance timeline is rendered as DOM/CSS lanes (not canvas), with percentage-based segment positioning.
+- The governance panel uses fixed-height lane rows to avoid responsive canvas sizing drift and overflow artifacts.
+- Segment hover updates style state in place (no full timeline re-render on pointer movement), reducing flicker and layout churn.
+
+## Local Development Cache Behavior
+
+- On localhost (127.0.0.1/localhost), the app now unregisters service workers and clears cache storage on load.
+- In non-local environments, service worker registration remains enabled.
+- Service worker fetch strategy uses network-first for HTML/document requests to prevent stale UI code from persisting after edits.
 
 ### Crude per-gallon methodology
 
