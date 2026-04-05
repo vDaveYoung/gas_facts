@@ -2,6 +2,27 @@
 
 Gas Price Facts
 
+## Conflict Timeline & Political Context (April 2026 Update)
+
+### Conflict Timeline Enhancements
+- Conflict strip is horizontally aligned with the main chart plot area using proportional padding (not raw pixels), preventing responsive layout collapse.
+- Governance overlays (presidential terms, congressional control) are restricted to the main chart only; the conflict strip now shows conflict bands exclusively.
+- Conflict table includes 5 columns: **Conflict**, **Range**, **Participants/Relationship**, **Casualties (Est.)**, **Deaths (Est.)**.
+- Toggle between **Summary** and **Detailed** views — detailed mode shows civilian/combatant/U.S. loss breakdowns.
+
+### Political Context — Election Vote Summary
+- A new **Election Results** panel under Political Context displays popular vote percentages and electoral vote totals per election.
+- Panel is **window-aware**: only shows elections that fall within the currently selected date range.
+- **Historical toggle** switches between *Modern (1980+)* and *Expanded History (1948+)* views.
+
+### Window Controls Reorganization
+Controls are now organized into **5 semantic grouped cards**:
+1. **Range** (full-width) — presets, slider, date display
+2. **Conflict** — war toggle, US/oil filters, duration, summary/detailed view
+3. **Political Context** — presidential/congressional overlays + election vote table
+4. **Market Overlays** — buying power, vehicles, DOW, WTI/Brent, production
+5. **News & Axis** — headline toggle, news mode, date axis detail
+
 ## Locked Interaction Behavior (April 2026)
 
 The Gas Price Timeline interaction model is now aligned with the Oil Production Context chart behavior.
