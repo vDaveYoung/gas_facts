@@ -14,12 +14,29 @@ The **Refinery Capacity & Output** section tracks supply-chain context between c
 - **World refinery capacity** — optional best-effort annual series via `productId=104` (often sparse)
 
 ### Layout
-Two side-by-side Chart.js panels (stacks to one column below 900 px):
-- **Left panel (U.S.)**: capacity + gross input (left TBPD axis), utilization (right % axis)
-- **Right panel (World)**: capacity (if available) plus refined-products output
+- Refinery context now renders as **one combined full-width chart** (same large-panel sizing as the other major context charts).
+- Combined view includes:
+	- **U.S. capacity + input** (TBPD)
+	- **U.S. utilization** (%)
+	- **World refinery series** (annual TBPD)
+- Timeline window is explicitly pinned to the selected main date range (`min/max`) so refinery context moves in lockstep with the rest of the dashboard.
 
 ### Controls
-Use **Market Overlays → "U.S. & World refinery capacity / utilization tracker"** to show/hide the section. The main date window applies to both refinery charts.
+Use **Market Overlays → "U.S. & World refinery capacity / utilization tracker"** to show/hide refinery context.
+
+- Toggle now updates both:
+	- the dedicated refinery context chart, and
+	- refinery overlays on the main timeline chart.
+
+### Interaction behavior
+- Refinery chart now follows the same hover/legend highlight pattern used elsewhere:
+	- active series is emphasized,
+	- non-active series are dimmed,
+	- leaving hover restores base styling.
+
+### Axis and sizing notes
+- Secondary right-side axes were hidden where appropriate to reduce right-margin expansion and keep chart plotting areas visually consistent.
+- Main and refinery large charts were normalized to matching height profiles.
 
 ### Local development notes
 - FRED CSV overlays (DJIA/WTI/Brent) are skipped on localhost to avoid browser CORS noise.
@@ -27,8 +44,7 @@ Use **Market Overlays → "U.S. & World refinery capacity / utilization tracker"
 
 ### Current troubleshooting checkpoint
 - API endpoints were corrected from invalid `refcap/sum/snd` routes to working `pnp/wiup` routes.
-- U.S. chart status text now shows capacity/input/utilization point counts and latest values to verify data load.
-- If the toggle is on and the line still appears missing, use the status text above the U.S. refinery chart to confirm whether capacity points are present in the current window.
+- Combined refinery status text now reports latest U.S. and world refinery values to verify load state quickly.
 
 ---
 

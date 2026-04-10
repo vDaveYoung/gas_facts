@@ -488,8 +488,8 @@
         }
 
         .chart-box {
-            height: 84vh;
-            min-height: 540px;
+            height: 72vh;
+            min-height: 560px;
             position: relative;
         }
 
@@ -635,19 +635,6 @@
             }
         }
 
-        .refinery-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-top: 8px;
-        }
-
-        @media (max-width: 900px) {
-            .refinery-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .context-charts {
             margin-top: 20px;
             display: grid;
@@ -754,6 +741,11 @@
         }
 
         #productionContent .context-chart-box {
+            min-height: 560px;
+            height: 72vh;
+        }
+
+        #refineryContent .context-chart-box {
             min-height: 560px;
             height: 72vh;
         }
@@ -1352,28 +1344,16 @@
         <div class="section-title" style="margin-bottom: 8px;">
             <div>
                 <h2 style="margin: 0; font-size: 1.2rem;">Refinery Capacity &amp; Output</h2>
-                <p>U.S. operable capacity, gross throughput, and utilization rate — plus World total distillation capacity (EIA annual data).</p>
+                <p>U.S. operable capacity, gross throughput, and utilization rate — with world refinery series in one combined view.</p>
             </div>
             <button class="btn btn-secondary section-collapse-btn" id="toggleRefinerySection" type="button" aria-expanded="true">Collapse</button>
         </div>
         <div id="refineryContent" class="collapsible-content">
-            <div class="refinery-grid">
-                <div>
-                    <p class="status-inline" id="usRefineryMeta" style="margin: 0 0 6px; font-size: 0.82rem;">Loading U.S. refinery data...</p>
-                    <div class="graph-bookend-wrap" style="margin-top: 0;">
-                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                        <div class="context-chart-box" style="margin-top: 0;"><canvas id="usRefineryChart"></canvas></div>
-                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                    </div>
-                </div>
-                <div>
-                    <p class="status-inline" id="worldRefineryMeta" style="margin: 0 0 6px; font-size: 0.82rem;">Loading world refinery data...</p>
-                    <div class="graph-bookend-wrap" style="margin-top: 0;">
-                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                        <div class="context-chart-box" style="margin-top: 0;"><canvas id="worldRefineryChart"></canvas></div>
-                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
-                    </div>
-                </div>
+            <p class="status-inline" id="refineryMeta" style="margin: 0 0 6px; font-size: 0.82rem;">Loading refinery data...</p>
+            <div class="graph-bookend-wrap" style="margin-top: 0;">
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                <div class="context-chart-box" style="margin-top: 0;"><canvas id="refineryChart"></canvas></div>
+                <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
             </div>
         </div>
     </section>
@@ -1954,8 +1934,7 @@ const state = {
     chart: null,
     warTimelineChart: null,
     productionChart: null,
-    usRefineryChart: null,
-    worldRefineryChart: null,
+    refineryChart: null,
     presidentBarChart: null,
     congressBarChart: null,
     senateBarChart: null,
@@ -2650,6 +2629,56 @@ function applyProductionHighlight(chart, activeIndex, forceUpdate = false) {
             dataset.borderWidth = 1;
             dataset.pointRadius = 1;
             dataset.pointHoverRadius = 2;
+        }
+    });
+
+    chart.update("none");
+}
+
+function applyRefineryHighlight(chart, activeIndex, forceUpdate = false) {
+    if (!chart) return;
+    const nextIndex = Number.isInteger(activeIndex) ? activeIndex : null;
+    if (!forceUpdate && (chart.$activeDatasetIndex ?? null) === nextIndex) return;
+
+    chart.$activeDatasetIndex = nextIndex;
+
+    chart.data.datasets.forEach((dataset, index) => {
+        if (!("baseBorderColor" in dataset)) dataset.baseBorderColor = dataset.borderColor;
+        if (!("baseBorderWidth" in dataset)) dataset.baseBorderWidth = dataset.borderWidth;
+        if (!("basePointRadius" in dataset)) dataset.basePointRadius = dataset.pointRadius;
+        if (!("basePointHoverRadius" in dataset)) dataset.basePointHoverRadius = dataset.pointHoverRadius;
+        if (!("baseBackgroundColor" in dataset)) dataset.baseBackgroundColor = dataset.backgroundColor;
+
+        const baseBorderColor = dataset.baseBorderColor;
+        const baseBorderWidth = Number.isFinite(dataset.baseBorderWidth) ? dataset.baseBorderWidth : 2;
+        const basePointRadius = Number.isFinite(dataset.basePointRadius) ? dataset.basePointRadius : 0;
+        const basePointHoverRadius = Number.isFinite(dataset.basePointHoverRadius) ? dataset.basePointHoverRadius : 3;
+        const baseBackgroundColor = dataset.baseBackgroundColor;
+
+        if (nextIndex === null) {
+            dataset.borderColor = baseBorderColor;
+            dataset.borderWidth = baseBorderWidth;
+            dataset.pointRadius = basePointRadius;
+            dataset.pointHoverRadius = basePointHoverRadius;
+            dataset.backgroundColor = baseBackgroundColor;
+            return;
+        }
+
+        if (index === nextIndex) {
+            dataset.borderColor = baseBorderColor;
+            dataset.borderWidth = Math.max(baseBorderWidth, 2) + 1;
+            dataset.pointRadius = Math.max(basePointRadius, 1);
+            dataset.pointHoverRadius = Math.max(basePointHoverRadius, 3);
+            dataset.backgroundColor = baseBackgroundColor;
+            return;
+        }
+
+        dataset.borderColor = withAlpha(baseBorderColor, 0.22);
+        dataset.borderWidth = Math.max(1, baseBorderWidth - 1);
+        dataset.pointRadius = 0;
+        dataset.pointHoverRadius = 1;
+        if (typeof baseBackgroundColor === "string") {
+            dataset.backgroundColor = setColorAlpha(baseBackgroundColor, 0.05);
         }
     });
 
@@ -3678,263 +3707,260 @@ function updateRefineryChart() {
     if (!(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return;
     const timeAxisSettings = getTimeAxisSettings(rangeStart, rangeEnd);
 
-    // ── U.S. chart ──────────────────────────────────────────────
-    const usCtx = document.getElementById("usRefineryChart")?.getContext("2d");
-    if (usCtx) {
-        const capacityPoints   = buildDateRangePoints(state.refinerySeries.usCapacity, rangeStart, rangeEnd);
-        const inputPoints      = buildDateRangePoints(state.refinerySeries.usInput, rangeStart, rangeEnd);
-        const utilizationPoints = buildDateRangePoints(state.refinerySeries.usUtilization, rangeStart, rangeEnd);
+    const refineryCtx = document.getElementById("refineryChart")?.getContext("2d");
+    if (!refineryCtx) return;
 
-        const usDatasets = [];
-        if (capacityPoints.length) {
-            usDatasets.push({
-                label: "U.S. operable capacity",
-                data: capacityPoints,
-                borderColor: "#58d0b3",
-                backgroundColor: "transparent",
-                borderWidth: 2.5,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                tension: 0.14,
-                fill: false,
-                order: 3,
-                yAxisID: "y"
-            });
-        }
-        if (inputPoints.length) {
-            usDatasets.push({
-                label: "U.S. gross refinery input",
-                data: inputPoints,
-                borderColor: "#ffb449",
-                backgroundColor: "transparent",
-                borderWidth: 1.5,
-                pointRadius: 0,
-                pointHoverRadius: 3,
-                tension: 0.1,
-                fill: false,
-                order: 2,
-                yAxisID: "y"
-            });
-        }
-        if (utilizationPoints.length) {
-            usDatasets.push({
-                label: "U.S. utilization rate (%)",
-                data: utilizationPoints,
-                borderColor: "#f27f61",
-                backgroundColor: "transparent",
-                borderWidth: 1.5,
-                pointRadius: 0,
-                pointHoverRadius: 3,
-                tension: 0.1,
-                fill: false,
-                order: 1,
-                yAxisID: "y1"
-            });
-        }
+    const capacityPoints = buildDateRangePoints(state.refinerySeries.usCapacity, rangeStart, rangeEnd);
+    const inputPoints = buildDateRangePoints(state.refinerySeries.usInput, rangeStart, rangeEnd);
+    const utilizationPoints = buildDateRangePoints(state.refinerySeries.usUtilization, rangeStart, rangeEnd);
+    const worldCapacityPoints = buildAnnualOverlayPoints(state.refinerySeries.worldCapacity, rangeStart, rangeEnd);
+    const worldOutputPoints = buildAnnualOverlayPoints(state.refinerySeries.worldOutput, rangeStart, rangeEnd);
 
-        if (state.usRefineryChart) {
-            state.usRefineryChart.data.datasets = usDatasets;
-            applyTimeAxisSettings(state.usRefineryChart.options.scales.x, timeAxisSettings);
-            state.usRefineryChart.update("none");
-        } else {
-            state.usRefineryChart = new Chart(usCtx, {
-                type: "line",
-                data: { datasets: usDatasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: "index", intersect: false },
-                    scales: {
-                        x: {
-                            type: "time",
-                            time: { unit: timeAxisSettings.unit },
-                            grid: { color: "rgba(255,255,255,0.08)" },
-                            ticks: {
-                                color: "#9ab8af",
-                                autoSkip: true,
-                                maxTicksLimit: timeAxisSettings.maxTicksLimit,
-                                maxRotation: 0,
-                                minRotation: 0,
-                                callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
-                            }
-                        },
-                        y: {
-                            grid: { color: "rgba(255,255,255,0.08)" },
-                            ticks: {
-                                color: "#9ab8af",
-                                callback: (value) => formatTbpd(Number(value))
-                            },
-                            title: {
-                                display: true,
-                                text: "TBPD",
-                                color: "#9ab8af",
-                                font: { size: 10 }
-                            }
-                        },
-                        y1: {
-                            position: "right",
-                            grid: { drawOnChartArea: false },
-                            min: 60,
-                            max: 100,
-                            ticks: {
-                                color: "#f27f61",
-                                callback: (value) => `${Number(value).toFixed(0)}%`
-                            },
-                            title: {
-                                display: true,
-                                text: "Utilization %",
-                                color: "#f27f61",
-                                font: { size: 10 }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: "top",
-                            align: "start",
-                            labels: {
-                                color: "#edf8f4",
-                                usePointStyle: true,
-                                boxWidth: 8,
-                                boxHeight: 8,
-                                font: { size: 11 }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (item) => {
-                                    const v = Number(item.raw?.y ?? item.raw);
-                                    if (item.dataset.yAxisID === "y1") return `${item.dataset.label}: ${v.toFixed(1)}%`;
-                                    return `${item.dataset.label}: ${formatTbpd(v)}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        if (usDatasets.length) {
-            const latestCapacity = capacityPoints.length ? capacityPoints[capacityPoints.length - 1] : null;
-            const latestInput = inputPoints.length ? inputPoints[inputPoints.length - 1] : null;
-            const latestUtilization = utilizationPoints.length ? utilizationPoints[utilizationPoints.length - 1] : null;
-            const latestParts = [
-                latestCapacity ? `Cap ${formatTbpd(latestCapacity.y)}` : "Cap n/a",
-                latestInput ? `Input ${formatTbpd(latestInput.y)}` : "Input n/a",
-                latestUtilization ? `Util ${latestUtilization.y.toFixed(1)}%` : "Util n/a"
-            ];
-
-            setText(
-                "usRefineryMeta",
-                `Operable capacity & gross input (TBPD · left). Utilization rate (% · right). Points: C ${capacityPoints.length}, I ${inputPoints.length}, U ${utilizationPoints.length}. Latest: ${latestParts.join(" | ")}.`
-            );
-        } else {
-            setText("usRefineryMeta", "U.S. refinery data unavailable for this window.");
-        }
+    const refineryDatasets = [];
+    if (capacityPoints.length) {
+        refineryDatasets.push({
+            label: "U.S. operable capacity",
+            data: capacityPoints,
+            borderColor: "#58d0b3",
+            backgroundColor: "transparent",
+            borderWidth: 2.5,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.12,
+            fill: false,
+            yAxisID: "y"
+        });
+    }
+    if (inputPoints.length) {
+        refineryDatasets.push({
+            label: "U.S. gross refinery input",
+            data: inputPoints,
+            borderColor: "#ffb449",
+            backgroundColor: "transparent",
+            borderWidth: 1.8,
+            pointRadius: 0,
+            pointHoverRadius: 3,
+            tension: 0.1,
+            fill: false,
+            yAxisID: "y"
+        });
+    }
+    if (worldCapacityPoints.length) {
+        refineryDatasets.push({
+            label: "World refinery capacity",
+            data: worldCapacityPoints,
+            borderColor: "#3a8fdd",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            tension: 0.14,
+            fill: false,
+            yAxisID: "y2"
+        });
+    }
+    if (worldOutputPoints.length) {
+        refineryDatasets.push({
+            label: "World refined products output",
+            data: worldOutputPoints,
+            borderColor: "#7dd3fc",
+            backgroundColor: "rgba(125, 211, 252, 0.06)",
+            borderWidth: 2,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            tension: 0.14,
+            fill: true,
+            yAxisID: "y2"
+        });
+    }
+    if (utilizationPoints.length) {
+        refineryDatasets.push({
+            label: "U.S. utilization rate",
+            data: utilizationPoints,
+            borderColor: "#9b8cff",
+            backgroundColor: "transparent",
+            borderWidth: 1.6,
+            pointRadius: 0,
+            pointHoverRadius: 3,
+            tension: 0.1,
+            fill: false,
+            yAxisID: "y1"
+        });
     }
 
-    // ── World chart ──────────────────────────────────────────────
-    const worldCtx = document.getElementById("worldRefineryChart")?.getContext("2d");
-    if (worldCtx) {
-        const worldCapacityPoints = buildAnnualOverlayPoints(state.refinerySeries.worldCapacity, rangeStart, rangeEnd);
-        const worldOutputPoints = buildAnnualOverlayPoints(state.refinerySeries.worldOutput, rangeStart, rangeEnd);
-
-        const worldDatasets = [];
-        if (worldCapacityPoints.length) {
-            worldDatasets.push({
-                label: "World refinery capacity",
-                data: worldCapacityPoints,
-                borderColor: "#3a8fdd",
-                backgroundColor: "rgba(58, 143, 221, 0.06)",
-                borderWidth: 2,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                tension: 0.14,
-                fill: true
-            });
-        }
-        if (worldOutputPoints.length) {
-            worldDatasets.push({
-                label: "World refined products output",
-                data: worldOutputPoints,
-                borderColor: "#58d0b3",
-                backgroundColor: "transparent",
-                borderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 4,
-                tension: 0.14,
-                fill: false
-            });
-        }
-
-        if (state.worldRefineryChart) {
-            state.worldRefineryChart.data.datasets = worldDatasets;
-            applyTimeAxisSettings(state.worldRefineryChart.options.scales.x, timeAxisSettings);
-            state.worldRefineryChart.update("none");
-        } else {
-            state.worldRefineryChart = new Chart(worldCtx, {
-                type: "line",
-                data: { datasets: worldDatasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: "index", intersect: false },
-                    scales: {
-                        x: {
-                            type: "time",
-                            time: { unit: timeAxisSettings.unit },
-                            grid: { color: "rgba(255,255,255,0.08)" },
-                            ticks: {
-                                color: "#9ab8af",
-                                autoSkip: true,
-                                maxTicksLimit: timeAxisSettings.maxTicksLimit,
-                                maxRotation: 0,
-                                minRotation: 0,
-                                callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
-                            }
+    if (state.refineryChart) {
+        state.refineryChart.data.datasets = refineryDatasets;
+        state.refineryChart.options.scales.x.min = rangeStart;
+        state.refineryChart.options.scales.x.max = rangeEnd;
+        applyTimeAxisSettings(state.refineryChart.options.scales.x, timeAxisSettings);
+        const activeIndex = Number.isInteger(state.refineryChart.$activeDatasetIndex)
+            && state.refineryChart.$activeDatasetIndex < refineryDatasets.length
+            ? state.refineryChart.$activeDatasetIndex
+            : null;
+        applyRefineryHighlight(state.refineryChart, activeIndex, true);
+    } else {
+        state.refineryChart = new Chart(refineryCtx, {
+            type: "line",
+            data: { datasets: refineryDatasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                onHover: (event, elements, chart) => {
+                    const resolved = (elements && elements.length)
+                        ? elements
+                        : chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+                    const activeIndex = resolved?.length ? resolved[0].datasetIndex : null;
+                    chart.canvas.style.cursor = Number.isInteger(activeIndex) ? "pointer" : "default";
+                    applyRefineryHighlight(chart, activeIndex);
+                },
+                scales: {
+                    x: {
+                        type: "time",
+                        min: rangeStart,
+                        max: rangeEnd,
+                        bounds: "ticks",
+                        offset: false,
+                        time: { unit: timeAxisSettings.unit },
+                        grid: { color: "rgba(255,255,255,0.08)" },
+                        ticks: {
+                            color: "#9ab8af",
+                            autoSkip: true,
+                            maxTicksLimit: timeAxisSettings.maxTicksLimit,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
+                        }
+                    },
+                    y: {
+                        grid: { color: "rgba(255,255,255,0.08)" },
+                        ticks: {
+                            color: "#58d0b3",
+                            callback: (value) => formatTbpd(Number(value))
                         },
-                        y: {
-                            grid: { color: "rgba(255,255,255,0.08)" },
-                            ticks: {
-                                color: "#9ab8af",
-                                callback: (value) => formatTbpd(Number(value))
-                            },
-                            title: {
-                                display: true,
-                                text: "TBPD",
-                                color: "#9ab8af",
-                                font: { size: 10 }
+                        title: {
+                            display: true,
+                            text: "U.S. TBPD",
+                            color: "#58d0b3",
+                            font: { size: 10 }
+                        }
+                    },
+                    y1: {
+                        display: false,
+                        position: "right",
+                        min: 60,
+                        max: 100,
+                        grid: { drawOnChartArea: false, display: false },
+                        ticks: {
+                            display: false,
+                            color: "#9b8cff",
+                            callback: (value) => `${Number(value).toFixed(0)}%`
+                        },
+                        title: {
+                            display: false,
+                            text: "Utilization %",
+                            color: "#9b8cff",
+                            font: { size: 10 }
+                        }
+                    },
+                    y2: {
+                        display: false,
+                        position: "right",
+                        grid: { drawOnChartArea: false, display: false },
+                        ticks: {
+                            display: false,
+                            color: "#7dd3fc",
+                            callback: (value) => formatTbpd(Number(value))
+                        },
+                        title: {
+                            display: false,
+                            text: "World TBPD",
+                            color: "#7dd3fc",
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: "top",
+                        align: "start",
+                        onHover: (_event, legendItem, legend) => {
+                            const chart = legend?.chart;
+                            if (!chart) return;
+                            chart.canvas.style.cursor = "pointer";
+                            applyRefineryHighlight(chart, legendItem.datasetIndex);
+                        },
+                        onLeave: (_event, legend) => {
+                            const chart = legend?.chart;
+                            if (!chart) return;
+                            chart.canvas.style.cursor = "default";
+                            applyRefineryHighlight(chart, null);
+                        },
+                        labels: {
+                            color: "#edf8f4",
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            font: { size: 11 },
+                            generateLabels: (chart) => {
+                                const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                const activeIndex = chart.$activeDatasetIndex;
+                                return labels.map((item) => {
+                                    const dataset = chart.data.datasets[item.datasetIndex] || {};
+                                    const baseColor = dataset.baseBorderColor || dataset.borderColor || item.strokeStyle;
+                                    const isActive = Number.isInteger(activeIndex) && activeIndex === item.datasetIndex;
+
+                                    if (isActive) {
+                                        return {
+                                            ...item,
+                                            fillStyle: "#ffffff",
+                                            strokeStyle: baseColor,
+                                            lineWidth: 3,
+                                            pointStyle: "circle"
+                                        };
+                                    }
+
+                                    return {
+                                        ...item,
+                                        fillStyle: baseColor,
+                                        strokeStyle: baseColor,
+                                        lineWidth: 1
+                                    };
+                                });
                             }
                         }
                     },
-                    plugins: {
-                        legend: {
-                            position: "top",
-                            align: "start",
-                            labels: {
-                                color: "#edf8f4",
-                                usePointStyle: true,
-                                boxWidth: 8,
-                                boxHeight: 8,
-                                font: { size: 11 }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (item) => {
-                                    const v = Number(item.raw?.y ?? item.raw);
-                                    return `${item.dataset.label}: ${formatTbpd(v)}`;
-                                }
+                    tooltip: {
+                        callbacks: {
+                            label: (item) => {
+                                const v = Number(item.raw?.y ?? item.raw);
+                                if (item.dataset.yAxisID === "y1") return `${item.dataset.label}: ${v.toFixed(1)}%`;
+                                return `${item.dataset.label}: ${formatTbpd(v)}`;
                             }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
+    }
 
-        setText("worldRefineryMeta", worldDatasets.length
-            ? "World refinery series (annual TBPD): capacity if available, plus refined-products output."
-            : "World refinery data unavailable for this window.");
+    if (refineryDatasets.length) {
+        const latestCapacity = capacityPoints.length ? capacityPoints[capacityPoints.length - 1] : null;
+        const latestInput = inputPoints.length ? inputPoints[inputPoints.length - 1] : null;
+        const latestUtilization = utilizationPoints.length ? utilizationPoints[utilizationPoints.length - 1] : null;
+        const latestWorldOutput = worldOutputPoints.length ? worldOutputPoints[worldOutputPoints.length - 1] : null;
+        const latestParts = [
+            latestCapacity ? `U.S. Cap ${formatTbpd(latestCapacity.y)}` : "U.S. Cap n/a",
+            latestInput ? `U.S. Input ${formatTbpd(latestInput.y)}` : "U.S. Input n/a",
+            latestUtilization ? `Util ${latestUtilization.y.toFixed(1)}%` : "Util n/a",
+            latestWorldOutput ? `World Out ${formatTbpd(latestWorldOutput.y)}` : "World Out n/a"
+        ];
+        setText(
+            "refineryMeta",
+            `Combined refinery view. U.S. capacity/input on left TBPD, utilization on right % axis, world series on right TBPD axis. Latest: ${latestParts.join(" | ")}.`
+        );
+    } else {
+        setText("refineryMeta", "Refinery data unavailable for this window.");
     }
 }
 
@@ -4324,6 +4350,55 @@ function updateChart() {
         }
     }
 
+    if (state.showRefineryTracker) {
+        const refineryCapacityPoints = buildDateRangePoints(state.refinerySeries.usCapacity, filtered[0].t, filtered[filtered.length - 1].t);
+        const refineryInputPoints = buildDateRangePoints(state.refinerySeries.usInput, filtered[0].t, filtered[filtered.length - 1].t);
+        const refineryUtilizationPoints = buildDateRangePoints(state.refinerySeries.usUtilization, filtered[0].t, filtered[filtered.length - 1].t);
+
+        if (refineryCapacityPoints.length) {
+            datasets.push({
+                label: "U.S. refinery capacity (weekly)",
+                data: refineryCapacityPoints,
+                borderColor: "#58d0b3",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.12,
+                borderDash: [8, 5],
+                fill: false,
+                yAxisID: "y4"
+            });
+        }
+        if (refineryInputPoints.length) {
+            datasets.push({
+                label: "U.S. refinery input (weekly)",
+                data: refineryInputPoints,
+                borderColor: "#ffb449",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.12,
+                borderDash: [4, 4],
+                fill: false,
+                yAxisID: "y4"
+            });
+        }
+        if (refineryUtilizationPoints.length) {
+            datasets.push({
+                label: "U.S. refinery utilization (%)",
+                data: refineryUtilizationPoints,
+                borderColor: "#9b8cff",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.12,
+                borderDash: [2, 6],
+                fill: false,
+                yAxisID: "y5"
+            });
+        }
+    }
+
     if (state.showProductionOverlay) {
         const toMainOverlayPoints = (series) => buildAnnualOverlayPoints(series, filtered[0].t, filtered[filtered.length - 1].t);
 
@@ -4538,28 +4613,61 @@ function updateChart() {
                         }
                     },
                     y1: {
+                        display: false,
                         position: "right",
-                        grid: { drawOnChartArea: false },
+                        grid: { drawOnChartArea: false, display: false },
                         ticks: {
+                            display: false,
                             color: "#9ab8af",
                             callback: (value) => `${(Number(value) / 1000000).toFixed(0)}M`
-                        }
+                        },
+                        title: { display: false }
                     },
                     y2: {
+                        display: false,
                         position: "right",
-                        grid: { drawOnChartArea: false },
+                        grid: { drawOnChartArea: false, display: false },
                         ticks: {
+                            display: false,
                             color: "#ffd166",
                             callback: (value) => Number(value).toLocaleString()
-                        }
+                        },
+                        title: { display: false }
                     },
                     y3: {
+                        display: false,
                         position: "right",
-                        grid: { drawOnChartArea: false },
+                        grid: { drawOnChartArea: false, display: false },
                         ticks: {
+                            display: false,
                             color: "#7dd3fc",
                             callback: (value) => formatTbpd(Number(value))
-                        }
+                        },
+                        title: { display: false }
+                    },
+                    y4: {
+                        display: false,
+                        position: "right",
+                        grid: { drawOnChartArea: false, display: false },
+                        ticks: {
+                            display: false,
+                            color: "#58d0b3",
+                            callback: (value) => formatTbpd(Number(value))
+                        },
+                        title: { display: false }
+                    },
+                    y5: {
+                        display: false,
+                        position: "right",
+                        min: 60,
+                        max: 100,
+                        grid: { drawOnChartArea: false, display: false },
+                        ticks: {
+                            display: false,
+                            color: "#9b8cff",
+                            callback: (value) => `${Number(value).toFixed(0)}%`
+                        },
+                        title: { display: false }
                     }
                 },
                 plugins: {
@@ -4641,6 +4749,12 @@ function updateChart() {
                                 if (productionLabels.includes(context.dataset.label)) {
                                     return `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`;
                                 }
+                                if (context.dataset.label === "U.S. refinery capacity (weekly)" || context.dataset.label === "U.S. refinery input (weekly)") {
+                                    return `${context.dataset.label}: ${formatTbpd(context.parsed.y)}`;
+                                }
+                                if (context.dataset.label === "U.S. refinery utilization (%)") {
+                                    return `${context.dataset.label}: ${Number(context.parsed.y).toFixed(1)}%`;
+                                }
                                 return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
                             },
                             footer: (items) => {
@@ -4663,6 +4777,11 @@ function updateChart() {
                                 const productionLabels = ["World crude production", "OPEC crude production", "U.S. crude production", "Saudi Arabia crude production", "Russia crude production", "Canada crude production", "UAE crude production"];
                                 if (productionLabels.includes(items?.[0]?.dataset?.label)) {
                                     return "EIA international annual crude production (TBPD)";
+                                }
+                                if (items?.[0]?.dataset?.label === "U.S. refinery capacity (weekly)"
+                                    || items?.[0]?.dataset?.label === "U.S. refinery input (weekly)"
+                                    || items?.[0]?.dataset?.label === "U.S. refinery utilization (%)") {
+                                    return "EIA petroleum pnp/wiup weekly refinery series";
                                 }
                                 const source = items?.[0]?.raw?.source;
                                 if (source === "monthly-total-pta") return "Source granularity: monthly";
@@ -4708,6 +4827,9 @@ function updateChart() {
         narrativeParts.push("Oil production overlays are active (World, OPEC, U.S., Saudi Arabia, Russia, Canada, and U.A.E. annual TBPD).");
     } else {
         narrativeParts.push("Use the production overlay to compare price movement with supply-side context.");
+    }
+    if (state.showRefineryTracker) {
+        narrativeParts.push("Refinery overlays are active on the main chart (U.S. weekly capacity/input in TBPD and utilization in %). Use right-side axes for refinery scales.");
     }
     if (state.showWarOverlay) {
         const filterParts = [];
@@ -4988,7 +5110,7 @@ function wireInteractions() {
         state.showRefineryTracker = event.target.checked;
         const refinerySection = document.getElementById("refinerySection");
         if (refinerySection) refinerySection.hidden = !state.showRefineryTracker;
-        updateRefineryChart();
+        updateChart();
     });
     document.getElementById("newsToggle").addEventListener("change", (event) => {
         state.showNewsBubble = event.target.checked;
@@ -5092,6 +5214,8 @@ function wireInteractions() {
     state.showBrentPerGallonOverlay = document.getElementById("brentPerGallonToggle").checked;
     state.showProductionOverlay = document.getElementById("productionToggle").checked;
     state.showRefineryTracker = document.getElementById("refineryToggle").checked;
+    const refinerySection = document.getElementById("refinerySection");
+    if (refinerySection) refinerySection.hidden = !state.showRefineryTracker;
     state.showWarOverlay = document.getElementById("warsToggle").checked;
     state.warFilterUS = document.getElementById("warsUSFilterToggle").checked;
     state.warFilterOil = document.getElementById("warsOilFilterToggle").checked;
