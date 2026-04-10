@@ -2,6 +2,29 @@
 
 Gas Price Facts
 
+## Refinery Capacity & Output Tracker (April 2026)
+
+A new **Refinery Capacity & Output** section tracks supply-chain context between crude oil production and pump prices.
+
+### What's tracked
+- **U.S. operable refinery capacity** — annual TBPD from EIA `petroleum/refcap` (crude distillation capacity)
+- **U.S. gross refinery input** — weekly TBPD from EIA `petroleum/sum/snd` (series `WCRRIUS2`)
+- **U.S. utilization rate** — weekly % from EIA `petroleum/sum/snd` (series `WPULEUS`); right axis scaled 60–100 %
+- **World total distillation capacity** — annual TBPD from EIA International (`productId=104`, region `WORL`)
+
+### Layout
+Two side-by-side Chart.js panels (stacks to single column below 900 px):
+- **Left** — U.S. operations: capacity + gross input on left axis (TBPD), utilization on right axis (%)
+- **Right** — World capacity: single area-fill line
+
+### Controls
+Toggle in **Market Overlays → "U.S. & World refinery capacity / utilization tracker"**. Section is hidden until the toggle is enabled. The date-range window slider applies to both charts. The section supports the standard collapse button.
+
+### Resilience
+All four EIA series are fetched in parallel. Any individual fetch failure silently returns an empty array; the rest of the dashboard continues to load normally.
+
+---
+
 ## Conflict Timeline & Political Context (April 2026 Update)
 
 ### Conflict Timeline Enhancements

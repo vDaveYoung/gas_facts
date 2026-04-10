@@ -635,6 +635,19 @@
             }
         }
 
+        .refinery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .refinery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .context-charts {
             margin-top: 20px;
             display: grid;
@@ -1273,6 +1286,13 @@
                             <span class="slider"></span>
                         </label>
                     </div>
+                    <div class="toggle-group">
+                        <span>U.S. &amp; World refinery capacity / utilization tracker</span>
+                        <label class="switch">
+                            <input type="checkbox" id="refineryToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1324,6 +1344,36 @@
                     <canvas id="productionChart"></canvas>
                 </div>
                 <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+            </div>
+        </div>
+    </section>
+
+    <section class="context-charts" id="refinerySection" hidden>
+        <div class="section-title" style="margin-bottom: 8px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.2rem;">Refinery Capacity &amp; Output</h2>
+                <p>U.S. operable capacity, gross throughput, and utilization rate — plus World total distillation capacity (EIA annual data).</p>
+            </div>
+            <button class="btn btn-secondary section-collapse-btn" id="toggleRefinerySection" type="button" aria-expanded="true">Collapse</button>
+        </div>
+        <div id="refineryContent" class="collapsible-content">
+            <div class="refinery-grid">
+                <div>
+                    <p class="status-inline" id="usRefineryMeta" style="margin: 0 0 6px; font-size: 0.82rem;">Loading U.S. refinery data...</p>
+                    <div class="graph-bookend-wrap" style="margin-top: 0;">
+                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                        <div class="context-chart-box" style="margin-top: 0;"><canvas id="usRefineryChart"></canvas></div>
+                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                    </div>
+                </div>
+                <div>
+                    <p class="status-inline" id="worldRefineryMeta" style="margin: 0 0 6px; font-size: 0.82rem;">Loading world refinery data...</p>
+                    <div class="graph-bookend-wrap" style="margin-top: 0;">
+                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-left" data-shift-years="-1" type="button" aria-label="Shift selected window one year earlier"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                        <div class="context-chart-box" style="margin-top: 0;"><canvas id="worldRefineryChart"></canvas></div>
+                        <button class="range-pill shift-window-btn bookend-btn bookend-btn-right" data-shift-years="1" type="button" aria-label="Shift selected window one year later"><span class="bookend-glyph"><span class="bookend-year">Y</span></span></button>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1894,9 +1944,17 @@ const state = {
         uae: [],
         topProducersContext: []
     },
+    refinerySeries: {
+        usCapacity: [],
+        usInput: [],
+        usUtilization: [],
+        worldCapacity: []
+    },
     chart: null,
     warTimelineChart: null,
     productionChart: null,
+    usRefineryChart: null,
+    worldRefineryChart: null,
     presidentBarChart: null,
     congressBarChart: null,
     senateBarChart: null,
@@ -1917,6 +1975,7 @@ const state = {
     showOilPerGallonOverlay: false,
     showBrentPerGallonOverlay: false,
     showProductionOverlay: false,
+    showRefineryTracker: false,
     showNewsBubble: true,
     hoveredSeriesLabel: "",
     productionHoverIndex: null,
@@ -3485,6 +3544,359 @@ async function fetchProductionSeries() {
     }
 }
 
+async function fetchUSRefineryCapacity() {
+    const url = new URL("https://api.eia.gov/v2/petroleum/refcap/aonly/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "annual");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[duoarea][]", "NUS");
+    url.searchParams.set("facets[product][]", "EPC0");
+    url.searchParams.set("facets[process][]", "OPCD");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "asc");
+    url.searchParams.set("length", "500");
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error("US refinery capacity fetch failed");
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
+        .map((row) => ({
+            t: new Date(`${row.period}-01-01`),
+            y: Number.parseFloat(row.value),
+            source: "eia-us-refinery-capacity"
+        }))
+        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
+        .sort((a, b) => a.t - b.t);
+}
+
+async function fetchUSRefineryInput() {
+    const url = new URL("https://api.eia.gov/v2/petroleum/sum/snd/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "weekly");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[series][]", "WCRRIUS2");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "asc");
+    url.searchParams.set("length", "5000");
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error("US refinery gross input fetch failed");
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
+        .map((row) => ({
+            t: new Date(row.period),
+            y: Number.parseFloat(row.value),
+            source: "eia-us-refinery-input"
+        }))
+        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
+        .sort((a, b) => a.t - b.t);
+}
+
+async function fetchUSRefineryUtilization() {
+    const url = new URL("https://api.eia.gov/v2/petroleum/sum/snd/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "weekly");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[series][]", "WPULEUS");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "asc");
+    url.searchParams.set("length", "5000");
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error("US refinery utilization fetch failed");
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
+        .map((row) => ({
+            t: new Date(row.period),
+            y: Number.parseFloat(row.value),
+            source: "eia-us-refinery-utilization"
+        }))
+        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
+        .sort((a, b) => a.t - b.t);
+}
+
+async function fetchWorldRefineryCapacity() {
+    // EIA international: productId=104 is crude oil refinery capacity in TBPD
+    const url = new URL("https://api.eia.gov/v2/international/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "annual");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[productId][]", "104");
+    url.searchParams.set("facets[activityId][]", "1");
+    url.searchParams.set("facets[countryRegionId][]", "WORL");
+    url.searchParams.set("facets[unit][]", "TBPD");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "asc");
+    url.searchParams.set("length", "500");
+    const response = await fetch(url.toString());
+    if (!response.ok) return [];
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
+        .map((row) => ({
+            t: new Date(`${row.period}-01-01`),
+            y: Number.parseFloat(row.value),
+            source: "eia-intl-world-refinery-capacity"
+        }))
+        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
+        .sort((a, b) => a.t - b.t);
+}
+
+async function fetchRefinerySeries() {
+    const [usCapacity, usInput, usUtilization, worldCapacity] = await Promise.all([
+        fetchUSRefineryCapacity().catch(() => []),
+        fetchUSRefineryInput().catch(() => []),
+        fetchUSRefineryUtilization().catch(() => []),
+        fetchWorldRefineryCapacity().catch(() => [])
+    ]);
+    return { usCapacity, usInput, usUtilization, worldCapacity };
+}
+
+function buildDateRangePoints(series, rangeStart, rangeEnd) {
+    if (!Array.isArray(series) || !series.length || !(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return [];
+    return series
+        .filter((p) => p.t >= rangeStart && p.t <= rangeEnd)
+        .map((p) => ({ x: p.t, y: p.y, source: p.source }));
+}
+
+function updateRefineryChart() {
+    if (!state.showRefineryTracker) return;
+
+    const rangeStart = state.selectedStart || state.allData[0]?.t;
+    const rangeEnd = state.selectedEnd || state.allData[state.allData.length - 1]?.t;
+    if (!(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return;
+    const timeAxisSettings = getTimeAxisSettings(rangeStart, rangeEnd);
+
+    // ── U.S. chart ──────────────────────────────────────────────
+    const usCtx = document.getElementById("usRefineryChart")?.getContext("2d");
+    if (usCtx) {
+        const capacityPoints   = buildAnnualOverlayPoints(state.refinerySeries.usCapacity, rangeStart, rangeEnd);
+        const inputPoints      = buildDateRangePoints(state.refinerySeries.usInput, rangeStart, rangeEnd);
+        const utilizationPoints = buildDateRangePoints(state.refinerySeries.usUtilization, rangeStart, rangeEnd);
+
+        const usDatasets = [];
+        if (capacityPoints.length) {
+            usDatasets.push({
+                label: "U.S. operable capacity",
+                data: capacityPoints,
+                borderColor: "#58d0b3",
+                backgroundColor: "transparent",
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                tension: 0.14,
+                fill: false,
+                yAxisID: "y"
+            });
+        }
+        if (inputPoints.length) {
+            usDatasets.push({
+                label: "U.S. gross refinery input",
+                data: inputPoints,
+                borderColor: "#ffb449",
+                backgroundColor: "transparent",
+                borderWidth: 1.5,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.1,
+                fill: false,
+                yAxisID: "y"
+            });
+        }
+        if (utilizationPoints.length) {
+            usDatasets.push({
+                label: "U.S. utilization rate (%)",
+                data: utilizationPoints,
+                borderColor: "#f27f61",
+                backgroundColor: "transparent",
+                borderWidth: 1.5,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                tension: 0.1,
+                fill: false,
+                yAxisID: "y1"
+            });
+        }
+
+        if (state.usRefineryChart) {
+            state.usRefineryChart.data.datasets = usDatasets;
+            applyTimeAxisSettings(state.usRefineryChart.options.scales.x, timeAxisSettings);
+            state.usRefineryChart.update("none");
+        } else {
+            state.usRefineryChart = new Chart(usCtx, {
+                type: "line",
+                data: { datasets: usDatasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: { unit: timeAxisSettings.unit },
+                            grid: { color: "rgba(255,255,255,0.08)" },
+                            ticks: {
+                                color: "#9ab8af",
+                                autoSkip: true,
+                                maxTicksLimit: timeAxisSettings.maxTicksLimit,
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
+                            }
+                        },
+                        y: {
+                            grid: { color: "rgba(255,255,255,0.08)" },
+                            ticks: {
+                                color: "#9ab8af",
+                                callback: (value) => formatTbpd(Number(value))
+                            },
+                            title: {
+                                display: true,
+                                text: "TBPD",
+                                color: "#9ab8af",
+                                font: { size: 10 }
+                            }
+                        },
+                        y1: {
+                            position: "right",
+                            grid: { drawOnChartArea: false },
+                            min: 60,
+                            max: 100,
+                            ticks: {
+                                color: "#f27f61",
+                                callback: (value) => `${Number(value).toFixed(0)}%`
+                            },
+                            title: {
+                                display: true,
+                                text: "Utilization %",
+                                color: "#f27f61",
+                                font: { size: 10 }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            align: "start",
+                            labels: {
+                                color: "#edf8f4",
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                boxHeight: 8,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (item) => {
+                                    const v = Number(item.raw?.y ?? item.raw);
+                                    if (item.dataset.yAxisID === "y1") return `${item.dataset.label}: ${v.toFixed(1)}%`;
+                                    return `${item.dataset.label}: ${formatTbpd(v)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        setText("usRefineryMeta", usDatasets.length
+            ? "Operable capacity & gross input (TBPD · left). Utilization rate (% · right)."
+            : "U.S. refinery data unavailable for this window.");
+    }
+
+    // ── World chart ──────────────────────────────────────────────
+    const worldCtx = document.getElementById("worldRefineryChart")?.getContext("2d");
+    if (worldCtx) {
+        const worldPoints = buildAnnualOverlayPoints(state.refinerySeries.worldCapacity, rangeStart, rangeEnd);
+
+        const worldDatasets = worldPoints.length ? [{
+            label: "World refinery capacity",
+            data: worldPoints,
+            borderColor: "#3a8fdd",
+            backgroundColor: "rgba(58, 143, 221, 0.06)",
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.14,
+            fill: true
+        }] : [];
+
+        if (state.worldRefineryChart) {
+            state.worldRefineryChart.data.datasets = worldDatasets;
+            applyTimeAxisSettings(state.worldRefineryChart.options.scales.x, timeAxisSettings);
+            state.worldRefineryChart.update("none");
+        } else {
+            state.worldRefineryChart = new Chart(worldCtx, {
+                type: "line",
+                data: { datasets: worldDatasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: { unit: timeAxisSettings.unit },
+                            grid: { color: "rgba(255,255,255,0.08)" },
+                            ticks: {
+                                color: "#9ab8af",
+                                autoSkip: true,
+                                maxTicksLimit: timeAxisSettings.maxTicksLimit,
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: (value, index) => formatTimeAxisTickLabel(value, timeAxisSettings.mode, index)
+                            }
+                        },
+                        y: {
+                            grid: { color: "rgba(255,255,255,0.08)" },
+                            ticks: {
+                                color: "#9ab8af",
+                                callback: (value) => formatTbpd(Number(value))
+                            },
+                            title: {
+                                display: true,
+                                text: "TBPD",
+                                color: "#9ab8af",
+                                font: { size: 10 }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            align: "start",
+                            labels: {
+                                color: "#edf8f4",
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                boxHeight: 8,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (item) => {
+                                    const v = Number(item.raw?.y ?? item.raw);
+                                    return `${item.dataset.label}: ${formatTbpd(v)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        setText("worldRefineryMeta", worldDatasets.length
+            ? "World total crude distillation capacity (TBPD · annual EIA data)."
+            : "World refinery capacity data unavailable for this window.");
+    }
+}
+
 function updateProductionChart() {
     const ctx = document.getElementById("productionChart")?.getContext("2d");
     if (!ctx) return;
@@ -4268,6 +4680,7 @@ function updateChart() {
     setText("chartNarrative", narrativeParts.join(" "));
     updateContextCharts();
     updateProductionChart();
+    updateRefineryChart();
     updateNewsHeadlinesPanel(filtered);
 }
 
@@ -4403,14 +4816,15 @@ async function fetchData() {
     const legacyMonthlyUrl = `https://api.eia.gov/v2/petroleum/pri/allmg/data/?api_key=${API_KEY}&frequency=monthly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPM0&facets[process][]=PTA&sort[0][column]=period&sort[0][direction]=desc&length=5000`;
 
     try {
-        const [totalResponse, regularResponse, legacyResponse, dowSeries, oilPerGallonSeries, brentPerGallonSeries, productionSeries] = await Promise.all([
+        const [totalResponse, regularResponse, legacyResponse, dowSeries, oilPerGallonSeries, brentPerGallonSeries, productionSeries, refinerySeries] = await Promise.all([
             fetch(totalGasWeeklyUrl),
             fetch(regularGasWeeklyUrl),
             fetch(legacyMonthlyUrl),
             fetchDowSeries(),
             fetchOilPerGallonSeries(),
             fetchBrentPerGallonSeries(),
-            fetchProductionSeries()
+            fetchProductionSeries(),
+            fetchRefinerySeries().catch(() => ({ usCapacity: [], usInput: [], usUtilization: [], worldCapacity: [] }))
         ]);
 
         const totalPayload = await totalResponse.json();
@@ -4437,6 +4851,9 @@ async function fetchData() {
         state.productionSeries = productionSeries && typeof productionSeries === "object"
             ? productionSeries
             : { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [], topProducersContext: [] };
+        state.refinerySeries = refinerySeries && typeof refinerySeries === "object"
+            ? refinerySeries
+            : { usCapacity: [], usInput: [], usUtilization: [], worldCapacity: [] };
 
         if (!state.allData.length) {
             throw new Error("The dataset contained no valid price points");
@@ -4526,6 +4943,12 @@ function wireInteractions() {
         state.showProductionOverlay = event.target.checked;
         updateChart();
     });
+    document.getElementById("refineryToggle").addEventListener("change", (event) => {
+        state.showRefineryTracker = event.target.checked;
+        const refinerySection = document.getElementById("refinerySection");
+        if (refinerySection) refinerySection.hidden = !state.showRefineryTracker;
+        updateRefineryChart();
+    });
     document.getElementById("newsToggle").addEventListener("change", (event) => {
         state.showNewsBubble = event.target.checked;
         updateChart();
@@ -4560,6 +4983,7 @@ function wireInteractions() {
     wireSectionCollapse("toggleFactsSection", "factsContent");
     wireSectionCollapse("toggleContextSection", "contextContent");
     wireSectionCollapse("toggleProductionSection", "productionContent");
+    wireSectionCollapse("toggleRefinerySection", "refineryContent");
 
     document.getElementById("rangePills").addEventListener("click", (event) => {
         const button = event.target.closest(".range-pill");
@@ -4626,6 +5050,7 @@ function wireInteractions() {
     state.showOilPerGallonOverlay = document.getElementById("oilPerGallonToggle").checked;
     state.showBrentPerGallonOverlay = document.getElementById("brentPerGallonToggle").checked;
     state.showProductionOverlay = document.getElementById("productionToggle").checked;
+    state.showRefineryTracker = document.getElementById("refineryToggle").checked;
     state.showWarOverlay = document.getElementById("warsToggle").checked;
     state.warFilterUS = document.getElementById("warsUSFilterToggle").checked;
     state.warFilterOil = document.getElementById("warsOilFilterToggle").checked;
