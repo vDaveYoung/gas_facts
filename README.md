@@ -4,24 +4,31 @@ Gas Price Facts
 
 ## Refinery Capacity & Output Tracker (April 2026)
 
-A new **Refinery Capacity & Output** section tracks supply-chain context between crude oil production and pump prices.
+The **Refinery Capacity & Output** section tracks supply-chain context between crude oil production and pump prices.
 
-### What's tracked
-- **U.S. operable refinery capacity** — annual TBPD from EIA `petroleum/refcap` (crude distillation capacity)
-- **U.S. gross refinery input** — weekly TBPD from EIA `petroleum/sum/snd` (series `WCRRIUS2`)
-- **U.S. utilization rate** — weekly % from EIA `petroleum/sum/snd` (series `WPULEUS`); right axis scaled 60–100 %
-- **World total distillation capacity** — annual TBPD from EIA International (`productId=104`, region `WORL`)
+### What is tracked
+- **U.S. operable refinery capacity** — weekly TBPD via EIA `petroleum/pnp/wiup` series `WOCLEUS2`
+- **U.S. gross refinery input** — weekly TBPD via EIA `petroleum/pnp/wiup` series `WGIRIUS2`
+- **U.S. utilization rate** — weekly % via EIA `petroleum/pnp/wiup` series `WPULEUS3`
+- **World refined products output** — annual TBPD via EIA International (`productId=54`, `activityId=1`, `countryRegionId=WORL`, `unit=TBPD`)
+- **World refinery capacity** — optional best-effort annual series via `productId=104` (often sparse)
 
 ### Layout
-Two side-by-side Chart.js panels (stacks to single column below 900 px):
-- **Left** — U.S. operations: capacity + gross input on left axis (TBPD), utilization on right axis (%)
-- **Right** — World capacity: single area-fill line
+Two side-by-side Chart.js panels (stacks to one column below 900 px):
+- **Left panel (U.S.)**: capacity + gross input (left TBPD axis), utilization (right % axis)
+- **Right panel (World)**: capacity (if available) plus refined-products output
 
 ### Controls
-Toggle in **Market Overlays → "U.S. & World refinery capacity / utilization tracker"**. Section is hidden until the toggle is enabled. The date-range window slider applies to both charts. The section supports the standard collapse button.
+Use **Market Overlays → "U.S. & World refinery capacity / utilization tracker"** to show/hide the section. The main date window applies to both refinery charts.
 
-### Resilience
-All four EIA series are fetched in parallel. Any individual fetch failure silently returns an empty array; the rest of the dashboard continues to load normally.
+### Local development notes
+- FRED CSV overlays (DJIA/WTI/Brent) are skipped on localhost to avoid browser CORS noise.
+- This does not affect EIA refinery data loading.
+
+### Current troubleshooting checkpoint
+- API endpoints were corrected from invalid `refcap/sum/snd` routes to working `pnp/wiup` routes.
+- U.S. chart status text now shows capacity/input/utilization point counts and latest values to verify data load.
+- If the toggle is on and the line still appears missing, use the status text above the U.S. refinery chart to confirm whether capacity points are present in the current window.
 
 ---
 
