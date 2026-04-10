@@ -1948,7 +1948,8 @@ const state = {
         usCapacity: [],
         usInput: [],
         usUtilization: [],
-        worldCapacity: []
+        worldCapacity: [],
+        worldOutput: []
     },
     chart: null,
     warTimelineChart: null,
@@ -3544,82 +3545,48 @@ async function fetchProductionSeries() {
     }
 }
 
-async function fetchUSRefineryCapacity() {
-    const url = new URL("https://api.eia.gov/v2/petroleum/refcap/aonly/data/");
+async function fetchRefineryWiupSeries(seriesId, sourceLabel) {
+    const url = new URL("https://api.eia.gov/v2/petroleum/pnp/wiup/data/");
     url.searchParams.set("api_key", API_KEY);
-    url.searchParams.set("frequency", "annual");
+    url.searchParams.set("frequency", "weekly");
     url.searchParams.set("data[0]", "value");
-    url.searchParams.set("facets[duoarea][]", "NUS");
-    url.searchParams.set("facets[product][]", "EPC0");
-    url.searchParams.set("facets[process][]", "OPCD");
+    url.searchParams.set("facets[series][]", seriesId);
     url.searchParams.set("sort[0][column]", "period");
     url.searchParams.set("sort[0][direction]", "asc");
-    url.searchParams.set("length", "500");
+    url.searchParams.set("length", "5000");
+
     const response = await fetch(url.toString());
-    if (!response.ok) throw new Error("US refinery capacity fetch failed");
+    if (!response.ok) {
+        throw new Error(`Refinery WIUP fetch failed for ${seriesId}`);
+    }
     const payload = await response.json();
     const rows = payload?.response?.data;
     if (!Array.isArray(rows) || !rows.length) return [];
+
     return rows
         .map((row) => ({
-            t: new Date(`${row.period}-01-01`),
+            t: new Date(row.period),
             y: Number.parseFloat(row.value),
-            source: "eia-us-refinery-capacity"
+            source: sourceLabel
         }))
         .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
         .sort((a, b) => a.t - b.t);
+}
+
+async function fetchUSRefineryCapacity() {
+    return fetchRefineryWiupSeries("WOCLEUS2", "eia-us-refinery-capacity");
 }
 
 async function fetchUSRefineryInput() {
-    const url = new URL("https://api.eia.gov/v2/petroleum/sum/snd/data/");
-    url.searchParams.set("api_key", API_KEY);
-    url.searchParams.set("frequency", "weekly");
-    url.searchParams.set("data[0]", "value");
-    url.searchParams.set("facets[series][]", "WCRRIUS2");
-    url.searchParams.set("sort[0][column]", "period");
-    url.searchParams.set("sort[0][direction]", "asc");
-    url.searchParams.set("length", "5000");
-    const response = await fetch(url.toString());
-    if (!response.ok) throw new Error("US refinery gross input fetch failed");
-    const payload = await response.json();
-    const rows = payload?.response?.data;
-    if (!Array.isArray(rows) || !rows.length) return [];
-    return rows
-        .map((row) => ({
-            t: new Date(row.period),
-            y: Number.parseFloat(row.value),
-            source: "eia-us-refinery-input"
-        }))
-        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
-        .sort((a, b) => a.t - b.t);
+    return fetchRefineryWiupSeries("WGIRIUS2", "eia-us-refinery-input");
 }
 
 async function fetchUSRefineryUtilization() {
-    const url = new URL("https://api.eia.gov/v2/petroleum/sum/snd/data/");
-    url.searchParams.set("api_key", API_KEY);
-    url.searchParams.set("frequency", "weekly");
-    url.searchParams.set("data[0]", "value");
-    url.searchParams.set("facets[series][]", "WPULEUS");
-    url.searchParams.set("sort[0][column]", "period");
-    url.searchParams.set("sort[0][direction]", "asc");
-    url.searchParams.set("length", "5000");
-    const response = await fetch(url.toString());
-    if (!response.ok) throw new Error("US refinery utilization fetch failed");
-    const payload = await response.json();
-    const rows = payload?.response?.data;
-    if (!Array.isArray(rows) || !rows.length) return [];
-    return rows
-        .map((row) => ({
-            t: new Date(row.period),
-            y: Number.parseFloat(row.value),
-            source: "eia-us-refinery-utilization"
-        }))
-        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
-        .sort((a, b) => a.t - b.t);
+    return fetchRefineryWiupSeries("WPULEUS3", "eia-us-refinery-utilization");
 }
 
 async function fetchWorldRefineryCapacity() {
-    // EIA international: productId=104 is crude oil refinery capacity in TBPD
+    // International refinery capacity is sparse in v2; keep as best-effort optional series.
     const url = new URL("https://api.eia.gov/v2/international/data/");
     url.searchParams.set("api_key", API_KEY);
     url.searchParams.set("frequency", "annual");
@@ -3646,14 +3613,43 @@ async function fetchWorldRefineryCapacity() {
         .sort((a, b) => a.t - b.t);
 }
 
+async function fetchWorldRefineryOutput() {
+    const url = new URL("https://api.eia.gov/v2/international/data/");
+    url.searchParams.set("api_key", API_KEY);
+    url.searchParams.set("frequency", "annual");
+    url.searchParams.set("data[0]", "value");
+    url.searchParams.set("facets[productId][]", "54");
+    url.searchParams.set("facets[activityId][]", "1");
+    url.searchParams.set("facets[countryRegionId][]", "WORL");
+    url.searchParams.set("facets[unit][]", "TBPD");
+    url.searchParams.set("sort[0][column]", "period");
+    url.searchParams.set("sort[0][direction]", "asc");
+    url.searchParams.set("length", "5000");
+
+    const response = await fetch(url.toString());
+    if (!response.ok) return [];
+    const payload = await response.json();
+    const rows = payload?.response?.data;
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
+        .map((row) => ({
+            t: new Date(`${row.period}-01-01`),
+            y: Number.parseFloat(row.value),
+            source: "eia-intl-world-refinery-output"
+        }))
+        .filter((p) => Number.isFinite(p.t.getTime()) && Number.isFinite(p.y))
+        .sort((a, b) => a.t - b.t);
+}
+
 async function fetchRefinerySeries() {
-    const [usCapacity, usInput, usUtilization, worldCapacity] = await Promise.all([
+    const [usCapacity, usInput, usUtilization, worldCapacity, worldOutput] = await Promise.all([
         fetchUSRefineryCapacity().catch(() => []),
         fetchUSRefineryInput().catch(() => []),
         fetchUSRefineryUtilization().catch(() => []),
-        fetchWorldRefineryCapacity().catch(() => [])
+        fetchWorldRefineryCapacity().catch(() => []),
+        fetchWorldRefineryOutput().catch(() => [])
     ]);
-    return { usCapacity, usInput, usUtilization, worldCapacity };
+    return { usCapacity, usInput, usUtilization, worldCapacity, worldOutput };
 }
 
 function buildDateRangePoints(series, rangeStart, rangeEnd) {
@@ -3812,19 +3808,36 @@ function updateRefineryChart() {
     // ── World chart ──────────────────────────────────────────────
     const worldCtx = document.getElementById("worldRefineryChart")?.getContext("2d");
     if (worldCtx) {
-        const worldPoints = buildAnnualOverlayPoints(state.refinerySeries.worldCapacity, rangeStart, rangeEnd);
+        const worldCapacityPoints = buildAnnualOverlayPoints(state.refinerySeries.worldCapacity, rangeStart, rangeEnd);
+        const worldOutputPoints = buildAnnualOverlayPoints(state.refinerySeries.worldOutput, rangeStart, rangeEnd);
 
-        const worldDatasets = worldPoints.length ? [{
-            label: "World refinery capacity",
-            data: worldPoints,
-            borderColor: "#3a8fdd",
-            backgroundColor: "rgba(58, 143, 221, 0.06)",
-            borderWidth: 2,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            tension: 0.14,
-            fill: true
-        }] : [];
+        const worldDatasets = [];
+        if (worldCapacityPoints.length) {
+            worldDatasets.push({
+                label: "World refinery capacity",
+                data: worldCapacityPoints,
+                borderColor: "#3a8fdd",
+                backgroundColor: "rgba(58, 143, 221, 0.06)",
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                tension: 0.14,
+                fill: true
+            });
+        }
+        if (worldOutputPoints.length) {
+            worldDatasets.push({
+                label: "World refined products output",
+                data: worldOutputPoints,
+                borderColor: "#58d0b3",
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.14,
+                fill: false
+            });
+        }
 
         if (state.worldRefineryChart) {
             state.worldRefineryChart.data.datasets = worldDatasets;
@@ -3892,8 +3905,8 @@ function updateRefineryChart() {
         }
 
         setText("worldRefineryMeta", worldDatasets.length
-            ? "World total crude distillation capacity (TBPD · annual EIA data)."
-            : "World refinery capacity data unavailable for this window.");
+            ? "World refinery series (annual TBPD): capacity if available, plus refined-products output."
+            : "World refinery data unavailable for this window.");
     }
 }
 
@@ -4824,7 +4837,7 @@ async function fetchData() {
             fetchOilPerGallonSeries(),
             fetchBrentPerGallonSeries(),
             fetchProductionSeries(),
-            fetchRefinerySeries().catch(() => ({ usCapacity: [], usInput: [], usUtilization: [], worldCapacity: [] }))
+            fetchRefinerySeries().catch(() => ({ usCapacity: [], usInput: [], usUtilization: [], worldCapacity: [], worldOutput: [] }))
         ]);
 
         const totalPayload = await totalResponse.json();
@@ -4853,7 +4866,7 @@ async function fetchData() {
             : { usa: [], world: [], opec: [], saudi: [], russia: [], canada: [], uae: [], topProducersContext: [] };
         state.refinerySeries = refinerySeries && typeof refinerySeries === "object"
             ? refinerySeries
-            : { usCapacity: [], usInput: [], usUtilization: [], worldCapacity: [] };
+            : { usCapacity: [], usInput: [], usUtilization: [], worldCapacity: [], worldOutput: [] };
 
         if (!state.allData.length) {
             throw new Error("The dataset contained no valid price points");
